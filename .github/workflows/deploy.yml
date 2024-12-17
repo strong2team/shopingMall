@@ -22,11 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. 디버깅: 파일 목록 출력
-      - name: List files for debugging
-        run: ls -la
-
-      # 3. AWS 자격 증명 설정
+      # 2. AWS 자격 증명 설정
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -34,30 +30,38 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 4. Amazon ECR 로그인
+      # 3. Amazon ECR 로그인
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # 5. Docker 이미지 빌드, 태그, 푸시
-      - name: Build, tag, and push Docker image
+      # 4. Docker 이미지 빌드, 태그 및 푸시
+      - name: Build, tag, and push Docker image to Amazon ECR
+        id: build-image
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
 
-      # 6. ECS task-definition 업데이트 (이미지 URI 삽입)
-      - name: Update ECS task definition with image URI
-        run: |
-          # ECS task definition 파일 내 이미지 URI를 동적으로 업데이트
-          sed -i "s|REPLACE_IMAGE_URI_HERE|${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}|g" aws/ecs-task-def.json
-
-      # 7. ECS 서비스 배포
-      - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      # 5. ECS 태스크 정의에서 이미지 ID 자동 채우기
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: aws/ecs-task-def.json
-          service: ${{ secrets.ECS_SERVICE }}
-          cluster: ${{ secrets.ECS_CLUSTER }}
-          wait-for-service-stability: true
+          container-name: shop-container
+          image: ${{ steps.build-image.outputs.image }}
 
+      # 6. ECS 서비스 업데이트
+      - name: Update ECS service with new task definition
+        run: |
+          ecs_task_def=$(cat ${{ steps.task-def.outputs.task-definition }})
+          echo "$ecs_task_def" > ecs-task-def.json
+          aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER }} --service ${{ secrets.ECS_SERVICE }} --task-definition "$ecs_task_def"
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+          ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
