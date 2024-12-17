@@ -5,7 +5,7 @@
   "containerDefinitions": [
     {
       "name": "shop-container",
-      "image": "REPLACE_IMAGE_URI_HERE",
+      "image": "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}",
       "cpu": 0,
       "portMappings": [
         {
