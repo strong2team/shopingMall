@@ -22,11 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Docker Buildx 설정 (제거)
-      # - name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v2
-
-      # 3. AWS 자격 증명 설정
+      # 2. AWS 자격 증명 설정
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -34,12 +30,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 4. Amazon ECR 로그인
+      # 3. Amazon ECR 로그인
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # 5. Docker 이미지 빌드, 태그, 푸시
+      # 4. Docker 이미지 빌드, 태그, 푸시
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
@@ -47,16 +43,19 @@ jobs:
           ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
+          echo "ECR_REGISTRY=${ECR_REGISTRY}"
+          echo "ECR_REPOSITORY=${ECR_REPOSITORY}"
+          echo "IMAGE_TAG=${IMAGE_TAG}"
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
 
-      # 6. ECS Task Definition 업데이트
+      # 5. ECS Task Definition 업데이트
       - name: Update ECS Task Definition
         run: |
           sed -e "s|<IMAGE_URI>|${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}|g" aws/ecs-task-def.json > aws/ecs-task-def-updated.json
 
-      # 7. ECS Task Definition 등록 및 서비스 업데이트
+      # 6. ECS Task Definition 등록 및 서비스 업데이트
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
@@ -64,3 +63,4 @@ jobs:
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
+
