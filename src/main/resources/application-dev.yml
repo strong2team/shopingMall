@@ -1,0 +1,17 @@
+server:
+  port: 8080
+spring:
+  # .env import
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: timedeal
+  profiles:
+    default: dev
+    #  jpa:
+    #    show-sql: true
+    #    properties:
+    #      hibernate:
+    #        format_sql: true
+#    hibernate:
+#      ddl-auto: update
