@@ -5,15 +5,13 @@
   "containerDefinitions": [
     {
       "name": "shop-container",
-      "image": "your-ecr-registry/shop:31a74f9487c4a9b16586e965a9329f56704545e4",
+      "image": "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}",
       "cpu": 0,
       "portMappings": [
         {
-          "name": "shop-container-8080-tcp",
           "containerPort": 8080,
           "hostPort": 8080,
-          "protocol": "tcp",
-          "appProtocol": "http"
+          "protocol": "tcp"
         }
       ],
       "essential": true,
@@ -21,19 +19,13 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/shop",
-          "mode": "non-blocking",
-          "awslogs-create-group": "true",
-          "max-buffer-size": "25m",
           "awslogs-region": "ap-northeast-2",
           "awslogs-stream-prefix": "ecs"
         }
       }
     }
   ],
-  "requiresCompatibilities": [
-    "FARGATE"
-  ],
+  "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",
-  "memory": "3072",
-  "tags": []
+  "memory": "3072"
 }
