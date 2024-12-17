@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - develop  # develop 브랜치에 푸시될 때 트리거-v2.4
+      - develop  # develop 브랜치에 푸시될 때 트리거
 
 env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
@@ -57,4 +57,3 @@ jobs:
           service: ${{ secrets.ECS_SERVICE }}
           cluster: ${{ secrets.ECS_CLUSTER }}
           wait-for-service-stability: true
-
