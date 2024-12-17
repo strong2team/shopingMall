@@ -5,7 +5,7 @@
   "containerDefinitions": [
     {
       "name": "shop-container",
-      "image": "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}",
+      "image": "REPLACE_IMAGE_URI_HERE",  // 이 값은 GitHub Actions에서 동적으로 채워집니다.
       "cpu": 0,
       "portMappings": [
         {
