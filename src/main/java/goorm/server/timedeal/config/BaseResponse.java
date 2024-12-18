@@ -34,7 +34,7 @@ public class BaseResponse<T> { // API 요청 응답 DTO
 		this(status, null);
 	}
 
-	private BaseResponse(BaseResponseStatus status, T result) {
+	public BaseResponse(BaseResponseStatus status, T result) {
 		this.isSuccess = status.isSuccess();
 		this.message = status.getMessage();
 		this.code = status.getCode();

@@ -234,17 +234,34 @@
       return;
     }
 
+    // 한 페이지당 표시할 아이템 수 (10개)
+    const display = 10;
+
+    // start 값 계산: start는 (page - 1) * display + 1
+    const start = (page - 1) * display + 1;
+
+    // start가 1000을 초과하지 않도록 제한
+    if (start > 1000) {
+      alert("페이지 번호가 너무 큽니다. 1000 페이지 이하로 요청해주세요.");
+      return;
+    }
+
     resultsContainer.innerHTML = "<p>검색 중...</p>";
     paginationContainer.innerHTML = "";
 
     try {
-      // Fetch API 호출
-      const response = await fetch(`/search-products?query=${encodeURIComponent(query)}&page=${page}`);
+      const response = await fetch(`/api/products?query=${encodeURIComponent(query)}&start=${start}&display=${display}`);
       const data = await response.json();
 
-      // 검색 결과 출력
+      if (!data.isSuccess) {
+        // 실패한 경우, 에러 메시지 표시
+        resultsContainer.innerHTML = `<p>${data.message}</p>`;
+        return;
+      }
+
+      // 데이터 처리
       resultsContainer.innerHTML = "";
-      data.items.forEach(item => {
+      data.result.items.forEach(item => {
         const card = document.createElement("div");
         card.className = "product-card";
         card.innerHTML = `
@@ -254,14 +271,14 @@
             <p>${item.brand || '브랜드 정보 없음'}</p>
             <p>₩${Number(item.lprice).toLocaleString()}</p>
           </div>
-      <button class="register-button" onclick="openModal()">타임딜 등록</button>
+          <button class="register-button" onclick="openModal()">타임딜 등록</button>
         `;
-
         resultsContainer.appendChild(card);
       });
 
       // 페이지네이션 생성
-      generatePagination(data.currentPage, Math.ceil(data.total / data.display));
+      const totalPages = Math.ceil(data.result.total / display);
+      generatePagination(data.result.currentPage, totalPages);
     } catch (error) {
       console.error("검색 실패:", error);
       resultsContainer.innerHTML = "<p>검색 결과를 가져오는 데 실패했습니다.</p>";
@@ -272,8 +289,12 @@
   function generatePagination(currentPage, totalPages) {
     const paginationContainer = document.getElementById("paginationContainer");
     const maxPagesToShow = 10;
+
+    // 페이지가 100보다 크면 100으로 제한
+    const effectiveTotalPages = totalPages > 100 ? 100 : totalPages;
+
     const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-    const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    const endPage = Math.min(effectiveTotalPages, startPage + maxPagesToShow - 1);
 
     paginationContainer.innerHTML = "";
 
@@ -301,16 +322,16 @@
     }
 
     // 마지막 페이지 버튼
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
+    if (endPage < effectiveTotalPages) {
+      if (endPage < effectiveTotalPages - 1) {
         const ellipsis = document.createElement("span");
         ellipsis.textContent = "...";
         paginationContainer.appendChild(ellipsis);
       }
 
       const lastButton = document.createElement("button");
-      lastButton.textContent = totalPages;
-      lastButton.onclick = () => searchProducts(totalPages);
+      lastButton.textContent = effectiveTotalPages;
+      lastButton.onclick = () => searchProducts(effectiveTotalPages);
       paginationContainer.appendChild(lastButton);
     }
   }
