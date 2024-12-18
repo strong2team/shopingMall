@@ -7,4 +7,6 @@ spring:
   profiles:
     default: dev
 
-
+naver:
+  client-id: ${NAVER_CLIENT_ID}
+  client-secret: ${NAVER_CLIENT_SECRET}

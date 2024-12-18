@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Test Controller for TimeDeal Project.
- * Provides dummy endpoints for testing.
+ * Provides health check & dummy endpoints for testing.
  */
 @RestController
 @RequestMapping("/api/test")
