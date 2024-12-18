@@ -5,17 +5,22 @@ spring:
   config:
     import: optional:file:.env[.properties]
   application:
-    name: timedeal-service
+    name: timedeal
   datasource:
     driver-class-name: ${DB_DRIVER_CLASS_NAME}
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: 20  # 커넥션 풀 최대 크기 설정
+      minimum-idle: 5
+      maximum-pool-size: 10
+      idle-timeout: 30000
+      connection-timeout: 30000
+      pool-name: HikariCP
+      max-lifetime: 60000
   jpa:
     hibernate:
-      ddl-auto: create  # 개발 환경에서만 테이블 자동 업데이트
+      ddl-auto: update  # 개발 환경에서만 테이블 자동 업데이트
     properties:
       hibernate:
         jdbc:
