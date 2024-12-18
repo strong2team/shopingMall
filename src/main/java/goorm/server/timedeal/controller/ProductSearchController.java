@@ -1,6 +1,5 @@
 package goorm.server.timedeal.controller;
 
-import static goorm.server.timedeal.config.Constant.*;
 
 import java.util.HashMap;
 import java.util.Map;
