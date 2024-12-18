@@ -1,0 +1,79 @@
+/* 기본 스타일 */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Pretendard", sans-serif;
+    background-color: #f8f8f8;
+    color: #333;
+}
+
+/* 헤더 스타일 */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #222;
+    padding: 10px 20px;
+    color: white;
+}
+
+header .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+header nav .menu {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+header nav .menu li a {
+    color: white;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+header nav .menu li a:hover {
+    text-decoration: underline;
+}
+
+/* 푸터 스타일 */
+footer {
+    text-align: center;
+    padding: 10px;
+    background-color: #222;
+    color: white;
+    font-size: 0.8rem;
+}
+
+/* 전체 레이아웃을 위한 Grid 설정 */
+body {
+    display: grid;
+    grid-template-rows: auto 1fr auto; /* 헤더, 메인 콘텐츠, 푸터 순서로 설정 */
+    min-height: 100vh; /* 전체 화면 높이 */
+    margin: 0;
+    font-family: "Pretendard", sans-serif;
+}
+
+header {
+    background-color: #222;
+    color: white;
+    padding: 10px 20px;
+    text-align: left;
+}
+
+main {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto; /* 중앙 정렬 */
+    width: 100%;
+}
+
+footer {
+    background-color: #222;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 0.8rem;
+}
