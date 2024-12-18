@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>타임딜 관리</title>
+  <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/deal_admin.css">
+
+  <style>
+
+  </style>
+</head>
+<body>
+<!-- 헤더 -->
+<div th:replace="~{header :: header}"></div>
+<main>
+  <h1>타임딜 관리</h1>
+
+  <div class="toggle-buttons">
+    <button id="toggle-search" class="active">상품 검색</button>
+    <button id="toggle-manage">등록된 타임딜 관리</button>
+  </div>
+
+  <div id="search-section" class="section active">
+    <h2>상품 검색</h2>
+    <form class="search-form" id="searchForm">
+      <input type="text" id="searchInput" placeholder="상품명을 입력하세요">
+      <button type="submit">검색</button>
+    </form>
+    <div id="resultsContainer" class="results-container"></div>
+    <div id="paginationContainer" class="pagination"></div>
+  </div>
+
+  <div id="manage-section" class="section">
+    <h2>등록된 타임딜 관리</h2>
+    <table class="deal-table">
+      <thead>
+      <tr>
+        <th>상품명</th>
+        <th>기간</th>
+        <th>재고</th>
+        <th>할인율</th>
+        <th>할인 후 가격</th>
+        <th>관리</th>
+      </tr>
+      </thead>
+      <tbody>
+      <!-- 더미 데이터 -->
+      <tr>
+        <td>상품 A</td>
+        <td>2024-12-20 10:00 ~ 2024-12-21 18:00</td>
+        <td>50</td>
+        <td>20%</td>
+        <td>₩46,202</td>
+        <td>
+          <button class="edit-btn">수정</button>
+          <button class="delete-btn">삭제</button>
+        </td>
+      </tr>
+      <tr>
+        <td>상품 B</td>
+        <td>2024-12-22 09:00 ~ 2024-12-23 20:00</td>
+        <td>30</td>
+        <td>15%</td>
+        <td>₩49,390</td>
+        <td>
+          <button class="edit-btn">수정</button>
+          <button class="delete-btn">삭제</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<!-- 모달 -->
+<!-- 기존 모달 유지 -->
+<div id="dealModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>타임딜 등록</h2>
+      <span class="modal-close" onclick="closeModal()">&times;</span>
+    </div>
+    <div class="form-group">
+      <label>시작 날짜 및 시간</label>
+      <div class="inline">
+        <input type="date" id="startDate">
+        <input type="time" id="startTime">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>마감 날짜 및 시간</label>
+      <div class="inline">
+        <input type="date" id="endDate">
+        <input type="time" id="endTime">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="stock">재고</label>
+      <input type="number" id="stock" placeholder="재고 수량">
+    </div>
+    <div class="form-group">
+      <label for="discountRate">할인율 (%)</label>
+      <input type="number" id="discountRate" placeholder="할인율 입력" oninput="updatePrice()">
+    </div>
+    <div class="form-group">
+      <span class="price-preview" id="pricePreview">할인 후 가격: ₩0</span>
+    </div>
+    <div class="modal-actions">
+      <button class="save-btn" onclick="openConfirmModal()">타임딜 예약</button>
+      <button class="cancel-btn" onclick="closeModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 확인 모달 추가 -->
+<div id="confirmModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>타임딜 예약 확인</h2>
+      <span class="modal-close" onclick="closeConfirmModal()">&times;</span>
+    </div>
+    <div id="confirmMessage">
+      <p>타임딜 예약 정보가 맞습니까?</p>
+      <ul>
+        <li><strong>기간:</strong> <span id="confirmPeriod"></span></li>
+        <li><strong>재고:</strong> <span id="confirmStock"></span></li>
+        <li><strong>할인율:</strong> <span id="confirmDiscountRate"></span>%</li>
+        <li><strong>할인 후 가격:</strong> ₩<span id="confirmPricePreview"></span></li>
+      </ul>
+    </div>
+    <div class="modal-actions">
+      <button class="save-btn" onclick="confirmSave()">예</button>
+      <button class="cancel-btn" onclick="closeConfirmModal()">아니오</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 토글 버튼 기능
+  document.getElementById("toggle-search").addEventListener("click", () => {
+    document.getElementById("search-section").classList.add("active");
+    document.getElementById("manage-section").classList.remove("active");
+    document.getElementById("toggle-search").classList.add("active");
+    document.getElementById("toggle-manage").classList.remove("active");
+  });
+
+  document.getElementById("toggle-manage").addEventListener("click", () => {
+    document.getElementById("manage-section").classList.add("active");
+    document.getElementById("search-section").classList.remove("active");
+    document.getElementById("toggle-manage").classList.add("active");
+    document.getElementById("toggle-search").classList.remove("active");
+  });
+
+  // 수정 및 삭제 버튼 클릭 이벤트
+  document.querySelectorAll(".edit-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      alert("수정 기능은 아직 구현되지 않았습니다.");
+    });
+  });
+
+  document.querySelectorAll(".delete-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      alert("삭제 기능은 아직 구현되지 않았습니다.");
+    });
+  });
+</script>
+
+<script>
+  // 모달 열기/닫기
+  function openModal() {
+    document.getElementById("dealModal").style.display = "flex";
+  }
+
+  function closeModal() {
+    document.getElementById("dealModal").style.display = "none";
+  }
+
+  function openConfirmModal() {
+    // 입력 값을 가져오기
+    const startDate = document.getElementById("startDate").value || "입력 안됨";
+    const startTime = document.getElementById("startTime").value || "입력 안됨";
+    const endDate = document.getElementById("endDate").value || "입력 안됨";
+    const endTime = document.getElementById("endTime").value || "입력 안됨";
+    const stock = document.getElementById("stock").value || "입력 안됨";
+    const discountRate = document.getElementById("discountRate").value || "입력 안됨";
+    const originalPrice = 57753; // 예시 가격
+    const discountedPrice = (originalPrice - (originalPrice * (discountRate / 100))).toFixed(0);
+
+    // 확인 모달 데이터 업데이트
+    document.getElementById("confirmPeriod").textContent = `${startDate} ${startTime} ~ ${endDate} ${endTime}`;
+    document.getElementById("confirmStock").textContent = stock;
+    document.getElementById("confirmDiscountRate").textContent = discountRate;
+    document.getElementById("confirmPricePreview").textContent = discountedPrice;
+
+    closeModal(); // 기존 등록 모달 닫기
+    document.getElementById("confirmModal").style.display = "flex"; // 확인 모달 열기
+  }
+
+
+
+  function closeConfirmModal() {
+    document.getElementById("confirmModal").style.display = "none";
+  }
+
+  function confirmSave() {
+    alert("타임딜이 최종적으로 등록되었습니다!");
+    closeConfirmModal();
+  }
+
+  // 할인 후 가격 업데이트
+  function updatePrice() {
+    const discountRate = document.getElementById("discountRate").value;
+    const originalPrice = 57753; // 예시 가격
+    const discountedPrice = (originalPrice - (originalPrice * (discountRate / 100))).toFixed(0);
+
+    document.getElementById("pricePreview").textContent = `할인 후 가격: ₩${Math.max(0, discountedPrice).toLocaleString()}`;
+  }
+
+</script>
+<script>
+  let currentPage = 1;
+
+  // 상품 검색 함수
+  async function searchProducts(page = 1) {
+    const query = document.getElementById("searchInput").value;
+    const resultsContainer = document.getElementById("resultsContainer");
+    const paginationContainer = document.getElementById("paginationContainer");
+
+    if (!query) {
+      alert("검색어를 입력하세요!");
+      return;
+    }
+
+    resultsContainer.innerHTML = "<p>검색 중...</p>";
+    paginationContainer.innerHTML = "";
+
+    try {
+      // Fetch API 호출
+      const response = await fetch(`/search-products?query=${encodeURIComponent(query)}&page=${page}`);
+      const data = await response.json();
+
+      // 검색 결과 출력
+      resultsContainer.innerHTML = "";
+      data.items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.innerHTML = `
+          <img src="${item.image}" alt="상품 이미지">
+          <div class="product-details">
+            <h3>${item.title.replace(/<[^>]*>/g, '')}</h3>
+            <p>${item.brand || '브랜드 정보 없음'}</p>
+            <p>₩${Number(item.lprice).toLocaleString()}</p>
+          </div>
+      <button class="register-button" onclick="openModal()">타임딜 등록</button>
+        `;
+
+        resultsContainer.appendChild(card);
+      });
+
+      // 페이지네이션 생성
+      generatePagination(data.currentPage, Math.ceil(data.total / data.display));
+    } catch (error) {
+      console.error("검색 실패:", error);
+      resultsContainer.innerHTML = "<p>검색 결과를 가져오는 데 실패했습니다.</p>";
+    }
+  }
+
+  // 페이지네이션 생성 함수
+  function generatePagination(currentPage, totalPages) {
+    const paginationContainer = document.getElementById("paginationContainer");
+    const maxPagesToShow = 10;
+    const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    paginationContainer.innerHTML = "";
+
+    // 첫 페이지 버튼
+    if (startPage > 1) {
+      const firstButton = document.createElement("button");
+      firstButton.textContent = "1";
+      firstButton.onclick = () => searchProducts(1);
+      paginationContainer.appendChild(firstButton);
+
+      if (startPage > 2) {
+        const ellipsis = document.createElement("span");
+        ellipsis.textContent = "...";
+        paginationContainer.appendChild(ellipsis);
+      }
+    }
+
+    // 현재 페이지 버튼들
+    for (let i = startPage; i <= endPage; i++) {
+      const button = document.createElement("button");
+      button.textContent = i;
+      button.classList.toggle("active", i === currentPage);
+      button.onclick = () => searchProducts(i);
+      paginationContainer.appendChild(button);
+    }
+
+    // 마지막 페이지 버튼
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        const ellipsis = document.createElement("span");
+        ellipsis.textContent = "...";
+        paginationContainer.appendChild(ellipsis);
+      }
+
+      const lastButton = document.createElement("button");
+      lastButton.textContent = totalPages;
+      lastButton.onclick = () => searchProducts(totalPages);
+      paginationContainer.appendChild(lastButton);
+    }
+  }
+
+  // 검색 폼 이벤트 리스너
+  document.getElementById("searchForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    currentPage = 1;
+    searchProducts();
+  });
+</script>
+
+
+<!-- 푸터 -->
+<div th:replace="~{footer :: footer}"></div>
+</body>
+</html>

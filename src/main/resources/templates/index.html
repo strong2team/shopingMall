@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>타임딜 서비스</title>
+    <!-- Pretendard 폰트 -->
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <!-- 공통 CSS -->
+    <link rel="stylesheet" href="/css/common.css">
+    <!-- 페이지 전용 CSS -->
+    <link rel="stylesheet" href="/css/index.css">
+    <style>
+        /* 가격 컨테이너 스타일 */
+        .price-container {
+            display: flex;
+            flex-direction: column; /* 수직 정렬 */
+            align-items: flex-end; /* 오른쪽 정렬 */
+            margin-bottom: 10px;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .price-details {
+            text-align: right; /* 오른쪽 정렬 */
+            margin-top: 5px; /* 할인율과 할인 후 가격 위쪽 여백 */
+        }
+
+        .discount-rate {
+            color: #e74c3c;
+            font-size: 1rem;
+            font-weight: bold;
+            display: block; /* 새로운 줄로 표시 */
+        }
+
+        .discounted-price {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #111;
+        }
+    </style>
+</head>
+<body>
+<!-- 헤더 -->
+<div th:replace="~{header :: header}"></div>
+
+<!-- 메인 섹션 -->
+<main>
+    <h1>오늘의 타임세일</h1>
+    <div class="product-container">
+        <!-- 상품 예시 -->
+        <div class="product">
+            <img src="https://via.placeholder.com/300" alt="상품 이미지">
+            <div class="product-info">
+                <h3>상품 이름</h3>
+                <div class="price-container">
+                    <span class="original-price">42,660원</span>
+                    <div class="price-details">
+                        <span class="discount-rate">27%</span>
+                        <span class="discounted-price">31,140원</span>
+                    </div>
+                </div>
+                <p class="time-remaining">남은 시간: <span class="timer">16:25:58</span></p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 푸터 -->
+<div th:replace="~{footer :: footer}"></div>
+</body>
+</html>

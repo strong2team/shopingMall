@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>쇼핑 검색</title>
+</head>
+<body>
+<h1>네이버 쇼핑 검색</h1>
+
+<!-- 검색 폼 -->
+<form method="get" action="/search">
+    <input type="text" name="query" placeholder="검색어 입력" th:value="${query}">
+    <button type="submit">검색</button>
+</form>
+
+<!-- 검색 결과 -->
+<div>
+    <h3 th:text="'검색 결과: ' + ${query}"></h3>
+    <ul>
+        <li th:each="item : ${items}">
+            <a th:href="${item.link}" target="_blank">
+                <img th:src="${item.image}" width="100"/>
+                <span th:text="${item.title}"></span>
+                <span th:text="${item.lprice} + '원'"></span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<!-- 페이지네이션 -->
+<div>
+    <a th:if="${currentPage > 1}" th:href="@{/search(query=${query}, start=${currentPage - display})}">이전</a>
+    <a th:if="${currentPage + display <= total}" th:href="@{/search(query=${query}, start=${currentPage + display})}">다음</a>
+</div>
+</body>
+</html>
