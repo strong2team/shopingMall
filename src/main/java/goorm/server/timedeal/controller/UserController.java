@@ -24,7 +24,7 @@ public class UserController {
 
 	// User 수정 API
 	@PutMapping("/{id}")
-	public ResponseEntity<User> updateUser(@PathVariable int id, @Validated @RequestBody User updatedUser) {
+	public ResponseEntity<User> updateUser(@PathVariable Long id, @Validated @RequestBody User updatedUser) {
 		User user = userService.updateUser(id, updatedUser);
 		return ResponseEntity.ok(user);
 	}
