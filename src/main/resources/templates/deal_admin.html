@@ -204,9 +204,100 @@
   function closeConfirmModal() {
     document.getElementById("confirmModal").style.display = "none";
   }
+  // 모달에서 사용자가 선택한 값들을 가져오는 함수
+  function getModalData() {
+    // 시작 날짜 및 시간
+    const startDate = document.getElementById('startDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const startDateTimeString = startDate && startTime ? `${startDate}T${startTime}` : null; // 'YYYY-MM-DDTHH:MM' 형식으로 결합
+    const startDateTime = startDateTimeString ? new Date(startDateTimeString).toISOString() : null;
 
-  function confirmSave() {
-    alert("타임딜이 최종적으로 등록되었습니다!");
+    // 마감 날짜 및 시간
+    const endDate = document.getElementById('endDate').value;
+    const endTime = document.getElementById('endTime').value;
+    const endDateTimeString = endDate && endTime ? `${endDate}T${endTime}` : null; // 'YYYY-MM-DDTHH:MM' 형식으로 결합
+    const endDateTime = startDateTimeString ? new Date(endDateTimeString).toISOString() : null;
+
+    // 재고
+    const stock = document.getElementById('stock').value;
+
+    // 할인율
+    const discountRate = document.getElementById('discountRate').value;
+
+
+
+    // 입력 받은 데이터 반환
+    return {
+      startDateTime,
+      endDateTime,
+      stock,
+      discountRate,
+    };
+  }
+
+  // 타임딜 예약 정보 저장
+  async function confirmSave() {
+    if (!selectedProduct) {
+      alert('상품을 선택하세요!');
+      return;
+    }
+
+    // 서버로 요청을 보낼 데이터 준비
+    const userId = 1;  // 예시로 유저 ID 1로 설정 (실제 유저 ID로 대체 필요)
+    const { productId, title, lprice, mallName, brand, category1, image } = selectedProduct;
+    // 모달에서 입력된 데이터 가져오기
+    const modalData = getModalData();
+
+    // 할인 후 가격 (할인율 적용)
+    // const originalPrice = 100000; // 예시로 원래 가격 설정, 실제로는 다른 방식으로 계산
+    const discountPrice = lprice - (lprice * (modalData.discountRate / 100));
+    // 서버에서 기대하는 변수명으로 매핑
+// 클라이언트에서 서버로 보낼 데이터 준비
+    const timeDealRequest = {
+      userId: userId, // 유저 ID
+      title: title,
+      price: lprice, // 가격
+      mallName: mallName,
+      brand: brand,
+      category1: category1,
+      imageUrl: image,
+      // startTime, endTime 등의 값은 클라이언트에서 직접 받아서 추가
+      startTime: modalData.startDateTime,  // 예시: '2024-12-19T10:00:00'
+      endTime: modalData.endDateTime,      // 예시: '2024-12-19T12:00:00'
+      discountPrice: discountPrice,  // 예시: 10000
+      discountPercentage: modalData.discountRate // 예시: 10.0
+    };
+
+    // 요청 보내기
+    console.log("timeDealRequest");
+    console.log(timeDealRequest); // 콘솔에서 데이터가 제대로 형식에 맞는지 확인
+
+    // 서버에 POST 요청 보내기
+    try {
+      const response = await fetch('/api/time-deals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(timeDealRequest),
+      });
+
+      const data = await response.json();
+      console.log("22222222")
+      console.log(data);
+      console.log("22222222")
+
+      if (data.isSuccess && data.code === 1000) {
+        alert('타임딜 예약이 완료되었습니다!');
+      } else {
+        alert(`타임딜 예약에 실패했습니다: ${data.message || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      console.error('타임딜 예약 중 오류 발생:', error);
+      alert('서버와의 통신에 문제가 발생했습니다.');
+    }
+
+    // 모달 닫기
     closeConfirmModal();
   }
 
@@ -222,10 +313,12 @@
 </script>
 <script>
   let currentPage = 1;
+  let selectedProduct = null;
 
   // 상품 검색 함수
   async function searchProducts(page = 1) {
-    const query = document.getElementById("searchInput").value;
+    currentPage = page; // 현재 페이지 번호 업데이트
+    const query = document.getElementById("searchInput").value.trim();
     const resultsContainer = document.getElementById("resultsContainer");
     const paginationContainer = document.getElementById("paginationContainer");
 
@@ -234,85 +327,89 @@
       return;
     }
 
-    // 한 페이지당 표시할 아이템 수 (10개)
-    const display = 10;
-
-    // start 값 계산: start는 (page - 1) * display + 1
+    const display = 10; // 페이지당 항목 수
     const start = (page - 1) * display + 1;
 
-    // start가 1000을 초과하지 않도록 제한
-    if (start > 1000) {
-      alert("페이지 번호가 너무 큽니다. 1000 페이지 이하로 요청해주세요.");
-      return;
-    }
+    // API 요청 URL 생성
+    const requestUrl = `/api/products?query=${encodeURIComponent(query)}&page=${page}`;
+    console.log("API 요청 URL:", requestUrl);
 
+    // 기존 결과와 페이지네이션 초기화
     resultsContainer.innerHTML = "<p>검색 중...</p>";
     paginationContainer.innerHTML = "";
 
     try {
-      const response = await fetch(`/api/products?query=${encodeURIComponent(query)}&start=${start}&display=${display}`);
+      const response = await fetch(requestUrl);
       const data = await response.json();
 
+      // API 응답 처리
       if (!data.isSuccess) {
-        // 실패한 경우, 에러 메시지 표시
         resultsContainer.innerHTML = `<p>${data.message}</p>`;
         return;
       }
 
-      // 데이터 처리
+      // 상품 결과 렌더링
       resultsContainer.innerHTML = "";
       data.result.items.forEach(item => {
         const card = document.createElement("div");
         card.className = "product-card";
         card.innerHTML = `
-          <img src="${item.image}" alt="상품 이미지">
-          <div class="product-details">
-            <h3>${item.title.replace(/<[^>]*>/g, '')}</h3>
-            <p>${item.brand || '브랜드 정보 없음'}</p>
-            <p>₩${Number(item.lprice).toLocaleString()}</p>
-          </div>
-          <button class="register-button" onclick="openModal()">타임딜 등록</button>
-        `;
+        <img src="${item.image}" alt="상품 이미지">
+        <div class="product-details">
+          <h3>${item.title.replace(/<[^>]*>/g, '')}</h3>
+          <p>${item.brand || '브랜드 정보 없음'}</p>
+          <p>₩${Number(item.lprice).toLocaleString()}</p>
+        </div>
+        <button class="register-button" onclick="openModal()">타임딜 등록</button>
+      `;
+
+        // 상품 클릭 이벤트: selectedProduct 설정
+        card.querySelector(".register-button").addEventListener("click", () => {
+          selectedProduct = item; // 선택한 상품 저장
+          console.log("선택된 상품 정보:", selectedProduct);
+          openModal(); // 모달 열기
+        });
+
         resultsContainer.appendChild(card);
       });
 
-      // 페이지네이션 생성
-      const totalPages = Math.ceil(data.result.total / display);
-      generatePagination(data.result.currentPage, totalPages);
+      // 페이지네이션 갱신
+      console.log("page번호:",data.result.currentPage, data.result.totalPages)
+      generatePagination(data.result.currentPage, data.result.totalPages);
     } catch (error) {
-      console.error("검색 실패:", error);
+      console.error("API 요청 실패:", error);
       resultsContainer.innerHTML = "<p>검색 결과를 가져오는 데 실패했습니다.</p>";
     }
   }
 
+
+
   // 페이지네이션 생성 함수
   function generatePagination(currentPage, totalPages) {
     const paginationContainer = document.getElementById("paginationContainer");
-    const maxPagesToShow = 10;
-
-    // 페이지가 100보다 크면 100으로 제한
-    const effectiveTotalPages = totalPages > 100 ? 100 : totalPages;
-
-    const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-    const endPage = Math.min(effectiveTotalPages, startPage + maxPagesToShow - 1);
+    const maxPagesToShow = 10; // 화면에 표시할 페이지 버튼 수
+    const maxPages = Math.min(100, totalPages); // 최대 페이지는 100으로 제한
 
     paginationContainer.innerHTML = "";
 
     // 첫 페이지 버튼
-    if (startPage > 1) {
+    if (currentPage > 1) {
       const firstButton = document.createElement("button");
       firstButton.textContent = "1";
       firstButton.onclick = () => searchProducts(1);
       paginationContainer.appendChild(firstButton);
 
-      if (startPage > 2) {
-        const ellipsis = document.createElement("span");
-        ellipsis.textContent = "...";
-        paginationContainer.appendChild(ellipsis);
+      if (currentPage > maxPagesToShow) {
+        const ellipsisStart = document.createElement("span");
+        ellipsisStart.textContent = "...";
+        paginationContainer.appendChild(ellipsisStart);
       }
     }
 
-    // 현재 페이지 버튼들
+    // 현재 페이지 기준으로 보여줄 페이지 범위 계산
+    const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    const endPage = Math.min(maxPages, startPage + maxPagesToShow - 1);
+
     for (let i = startPage; i <= endPage; i++) {
       const button = document.createElement("button");
       button.textContent = i;
@@ -322,19 +419,20 @@
     }
 
     // 마지막 페이지 버튼
-    if (endPage < effectiveTotalPages) {
-      if (endPage < effectiveTotalPages - 1) {
-        const ellipsis = document.createElement("span");
-        ellipsis.textContent = "...";
-        paginationContainer.appendChild(ellipsis);
+    if (currentPage < maxPages) {
+      if (currentPage < maxPages - Math.floor(maxPagesToShow / 2)) {
+        const ellipsisEnd = document.createElement("span");
+        ellipsisEnd.textContent = "...";
+        paginationContainer.appendChild(ellipsisEnd);
       }
 
       const lastButton = document.createElement("button");
-      lastButton.textContent = effectiveTotalPages;
-      lastButton.onclick = () => searchProducts(effectiveTotalPages);
+      lastButton.textContent = maxPages;
+      lastButton.onclick = () => searchProducts(maxPages);
       paginationContainer.appendChild(lastButton);
     }
   }
+
 
   // 검색 폼 이벤트 리스너
   document.getElementById("searchForm").addEventListener("submit", (e) => {
