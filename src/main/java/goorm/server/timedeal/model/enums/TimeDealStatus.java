@@ -1,6 +1,7 @@
 package goorm.server.timedeal.model.enums;
 
 public enum TimeDealStatus {
+	SCHEDULED("scheduled"),  // 타임딜 예약됨 (시작 전)
 	ACTIVE("active"),   // 타임딜 활성 상태
 	ENDED("ended"),    // 타임딜 종료 상태
 	DELETED("deleted"); // 타임딜 삭제 상태

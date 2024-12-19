@@ -20,8 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
+@Getter  @Setter
 @Entity
 @Audited  // 변경 이력 추적
 @AuditTable(schema = "audit", value = "product_audit")  // 변경 이력을 저장할 테이블 지정
