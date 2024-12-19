@@ -16,14 +16,4 @@ public class UserRevisionService {
 	@Autowired
 	private UserRepository userRepository;
 
-	// 모든 리비전 조회
-	public List<Revision<Integer, User>> getUserRevisions(int userId) {
-		return userRepository.findRevisions(userId).getContent();
-	}
-
-	// 특정 리비전 조회
-	public Revision<Integer, User> getUserRevisionByNumber(int userId, int revisionNumber) {
-		return userRepository.findRevision(userId, revisionNumber)
-			.orElseThrow(() -> new RuntimeException("No revision found for user id: " + userId));
-	}
 }
