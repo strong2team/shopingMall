@@ -93,7 +93,7 @@ public class TimeDealService {
 	 * 타임딜 ID와 수정할 정보를 담고 있는 `UpdateReqTimeDeal` 객체를 받아 기존 타임딜을 업데이트.
 	 *
 	 * @param dealId 타임딜을 식별하는 고유 ID.
-	 * @param timeDealUpdateRequest 수정할 타임딜 정보를 담고 있는 `UpdateReqTimeDeal` 객체.
+	 * @param timeDealUpdateRequest 수정할 타임딜 정보를 담고 있는 `UpdateReqTimeDeal`.
 	 * @return 업데이트된 타임딜 객체를 반환.
 	 */
 	@Transactional

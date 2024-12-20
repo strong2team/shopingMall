@@ -34,7 +34,7 @@ public class TimeDealController {
 	/**
 	 * 새로운 타임딜을 생성하는 API.
 	 *
-	 * @param timeDealRequest 생성할 타임딜의 정보를 담고 있는 `ReqTimeDeal` 객체.
+	 * @param timeDealRequest 생성할 타임딜의 정보를 담고 있는 `ReqTimeDeal`.
 	 * @return 생성된 타임딜을 포함한 응답을 반환.
 	 */
 
