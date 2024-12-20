@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import goorm.server.timedeal.model.enums.TimeDealStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +23,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+
 @Entity
 @Audited
 @AuditTable(schema = "audit", value = "time_deal_audit")
@@ -31,6 +34,7 @@ public class TimeDeal extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long timeDealId;
+
 
 	@ManyToOne
 	@JoinColumn(name = "product_id", foreignKey = @ForeignKey(name = "fk_time_deal_product_id"))
@@ -51,5 +55,18 @@ public class TimeDeal extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	private TimeDealStatus status;
+
+	@Override
+	public String toString() {
+		return "TimeDeal{" +
+			"timeDealId=" + timeDealId +
+			", product=" + (product != null ? product.getProductId() : "null") +
+			", discountPrice=" + discountPrice +
+			", status=" + status +
+			", startTime=" + startTime +
+			", endTime=" + endTime +
+			'}';
+	}
+
 
 }
