@@ -8,6 +8,6 @@ import java.util.Optional;
 
 import goorm.server.timedeal.model.User;
 
-public interface UserRepository extends JpaRepository<User, Integer>,
-	RevisionRepository<User, Integer, Integer> {
+public interface UserRepository extends JpaRepository<User, Long>,
+	RevisionRepository<User, Long, Long> {
 }

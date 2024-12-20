@@ -44,6 +44,19 @@ dependencies {
 	// Thymeleaf
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
+	// S3
+	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+	implementation 'javax.xml.bind:jaxb-api:2.3.1'
+	implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
+
+	// aws eventBridge
+	// AWS SDK for EventBridge
+	// AWS SDK BOM
+	implementation platform('software.amazon.awssdk:bom:2.20.56')
+	// EventBridge
+	implementation 'software.amazon.awssdk:eventbridge'
+
+
 }
 
 tasks.named('test') {

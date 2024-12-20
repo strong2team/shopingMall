@@ -17,12 +17,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Audited
 @AuditTable(schema = "audit", value = "time_deal_audit")
 @Table(name = "time_deal")
+@Getter @Setter
 public class TimeDeal extends BaseEntity {
 
 	@Id
@@ -32,6 +35,10 @@ public class TimeDeal extends BaseEntity {
 	@ManyToOne
 	@JoinColumn(name = "product_id", foreignKey = @ForeignKey(name = "fk_time_deal_product_id"))
 	private Product product;
+
+	@ManyToOne
+	@JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_time_deal_user_id"))
+	private User user;
 
 	private LocalDateTime startTime;
 	private LocalDateTime endTime;

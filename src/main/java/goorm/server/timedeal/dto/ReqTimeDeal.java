@@ -2,7 +2,8 @@ package goorm.server.timedeal.dto;
 
 import java.time.LocalDateTime;
 
-public record TimeDealRequest(
+public record ReqTimeDeal(
+	Long userId, // 요청한 유저의 ID
 	String title,
 	int price,
 	String mallName,
