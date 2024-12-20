@@ -13,5 +13,6 @@ public record ReqTimeDeal(
 	LocalDateTime startTime,
 	LocalDateTime endTime,
 	Integer discountPrice,
-	Double discountPercentage
+	Double discountPercentage,
+	Integer stockQuantity
 ) {}
