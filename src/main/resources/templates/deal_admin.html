@@ -244,7 +244,7 @@
 
     // 서버로 요청을 보낼 데이터 준비
     const userId = 1;  // 예시로 유저 ID 1로 설정 (실제 유저 ID로 대체 필요)
-    const { productId, title, lprice, mallName, brand, category1, image } = selectedProduct;
+    const { productId, title, lprice, mallName, brand, category1, image, stock } = selectedProduct;
     // 모달에서 입력된 데이터 가져오기
     const modalData = getModalData();
 
@@ -265,12 +265,14 @@
       startTime: modalData.startDateTime,  // 예시: '2024-12-19T10:00:00'
       endTime: modalData.endDateTime,      // 예시: '2024-12-19T12:00:00'
       discountPrice: discountPrice,  // 예시: 10000
-      discountPercentage: modalData.discountRate // 예시: 10.0
+      discountPercentage: modalData.discountRate, // 예시: 10.0
+      stockQuantity: modalData.stock      // **추가된 재고 수량**
+
     };
 
     // 요청 보내기
     console.log("timeDealRequest");
-    console.log(timeDealRequest); // 콘솔에서 데이터가 제대로 형식에 맞는지 확인
+    //console.log(timeDealRequest); // 콘솔에서 데이터가 제대로 형식에 맞는지 확인
 
     // 서버에 POST 요청 보내기
     try {

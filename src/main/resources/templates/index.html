@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>타임딜 서비스</title>
 
-
     <!-- Pretendard 폰트 -->
     <link rel="stylesheet" as="style" crossorigin
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -19,41 +18,91 @@
             display: flex;
             gap: 20px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
+        /* Active 타임딜 카드 디자인 */
         .product, .coming-soon {
             background-color: white;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px; /* 둥근 모서리 */
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
             text-align: center;
-            transition: transform 0.2s ease;
-            width: 250px;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            width: 280px;
             position: relative;
+        }
+
+        /* 커밍순 카드 디자인 */
+        .coming-soon {
+            background-color: #f8f8f8;
         }
 
         .product:hover, .coming-soon:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
 
+        /* 제품 이미지 */
         .product img, .coming-soon img {
             width: 100%;
             height: 180px;
             object-fit: cover;
             border-radius: 8px;
+            margin-bottom: 15px;
         }
 
-        .product-info h3, .coming-soon h3 {
-            font-size: 1.2rem;
+        /* 할인 태그 */
+        .discount-tag {
+            background-color: #e74c3c;
+            color: white;
+            font-size: 1em;
+            padding: 5px 10px;
+            border-radius: 15px;
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 2;
+        }
+
+        /* Coming Soon 오버레이 */
+        .coming-soon .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* 검은색 투명 배경 */
+            border-radius: 12px;
+            z-index: 1;
+        }
+
+        .coming-soon .overlay-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 2; /* 투명 배경 위에 표시 */
+        }
+
+        /* 제품 이름 */
+        .product h3, .coming-soon h3 {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
             margin-bottom: 10px;
-            color: #333;
         }
 
+        /* 가격 및 할인율 */
         .price-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
             margin-bottom: 10px;
         }
 
@@ -75,7 +124,8 @@
             color: #111;
         }
 
-        .time-remaining {
+        /* 남은 시간 및 재고 */
+        .time-remaining, .days-remaining, .stock-quantity {
             font-size: 0.9rem;
             color: #555;
             margin-top: 8px;
@@ -89,139 +139,222 @@
         }
 
         .days-remaining {
-            font-size: 1rem;
             color: #e74c3c;
             font-weight: bold;
         }
 
-        /* Coming Soon 카드 스타일 */
-        .coming-soon {
-            position: relative;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-        }
-
-        .coming-soon .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* 검은색 투명 배경 */
-            border-radius: 8px;
-            z-index: 1;
-        }
-
-        .coming-soon .overlay-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(0, 0, 0, 0.4); /* 검은색 투명도 40% */
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            z-index: 2; /* 투명 배경 위에 표시 */
-        }
     </style>
 </head>
 <body>
-<!-- 헤더 -->
 <div th:replace="~{header :: header}"></div>
 
-<!-- 메인 섹션 -->
 <main>
     <h1>오늘의 타임세일</h1>
     <div class="product-container">
-        <!-- 기존 타임세일 항목 1 -->
-        <div class="product">
-            <img src="https://via.placeholder.com/300" alt="상품 이미지">
-            <div class="product-info">
-                <h3>상품 이름 1</h3>
-                <div class="price-container">
-                    <span class="original-price">42,660원</span>
-                    <div class="price-details">
-                        <span class="discount-rate">27%</span>
-                        <span class="discounted-price">31,140원</span>
-                    </div>
-                </div>
-                <p class="time-remaining">남은 시간: <span class="timer">16:25:58</span></p>
+        <!-- Active Time Deals -->
+        <div class="product" th:each="deal : ${activeDeals}" data-end-time="${deal.endTime}">
+            <img th:src="${deal.ProductImages}" alt="Product Image">
+            <div class="discount-tag" th:text="'-' + ${deal.discountRate} + '%'">Discount</div>
+            <h3 th:utext="${deal.productName}">Product Name</h3>
+            <div class="price-container">
+                <span class="original-price" th:text="${deal.originalPrice}">Original Price</span>
+                <span class="discounted-price" th:text="${deal.discountPrice}">Discounted Price</span> 원
+            </div>
+            <div class="time-remaining">
+                남은 시간: <span class="timer">계산 중...</span>
+            </div>
+            <div class="stock-quantity">
+                재고: <span th:text="${deal.stockQuantity}">Stock</span>개
             </div>
         </div>
 
-        <!-- 기존 타임세일 항목 2 -->
-        <div class="product">
-            <img src="https://via.placeholder.com/300" alt="상품 이미지">
-            <div class="product-info">
-                <h3>상품 이름 2</h3>
-                <div class="price-container">
-                    <span class="original-price">50,000원</span>
-                    <div class="price-details">
-                        <span class="discount-rate">30%</span>
-                        <span class="discounted-price">35,000원</span>
-                    </div>
-                </div>
-                <p class="time-remaining">남은 시간: <span class="timer">19:25:58</span></p>
-            </div>
-        </div>
-
-        <!-- Coming Soon 카드 -->
-        <div class="coming-soon">
+        <!-- Coming Soon Deals -->
+        <div class="coming-soon" th:each="deal : ${scheduledDeals}" data-end-time="${deal.endTime}">
+            <img th:src="${deal.ProductImages}" alt="Coming Soon Image">
             <div class="overlay"></div>
-            <div class="overlay-content">
-                Coming Soon
+            <div class="overlay-content">Coming Soon</div>
+            <h3 th:utext="${deal.productName}">Product Name</h3>
+            <div class="price-container">
+                <span class="original-price" th:text="${deal.originalPrice}">Original Price</span>
+                <span class="discounted-price" th:text="${deal.discountPrice}">Discounted Price</span> 원
             </div>
-            <img src="https://via.placeholder.com/300" alt="상품 이미지">
-            <div class="product-info">
-                <h3>상품 이름 3</h3>
-                <div class="price-container">
-                    <span class="original-price">55,000원</span>
-                    <div class="price-details">
-                        <span class="discount-rate">40%</span>
-                        <span class="discounted-price">33,000원</span>
-                    </div>
-                </div>
-                <p class="date-range">2024-12-20 ~ 2024-12-23</p>
-                <p class="days-remaining">남은 날짜: 3일</p>
+            <div class="date-range">
+                <span th:text="${deal.startTime}">Start Date</span> ~
+                <span th:text="${deal.endTime}">End Date</span>
+            </div>
+            <div class="days-remaining">
+                남은 날짜: <span class="days-left">계산 중...</span>일
             </div>
         </div>
     </div>
-
-
-    <!-- 여기부터 -->
-    <h1>Time Deals</h1>
-    <div>
-        <h2>Active Deals</h2>
-        <ul>
-            <!-- Thymeleaf로 Active Deals 출력 -->
-            <li th:each="deal : ${activeDeals}" th:text="${deal.getTimeDealId()}">Deal Name</li>
-        </ul>
-    </div>
-    <div>
-        <h2>Scheduled Deals</h2>
-        <ul>
-            <!-- Thymeleaf로 Scheduled Deals 출력 -->
-            <li th:each="deal : ${scheduledDeals}" th:text="${deal.getTimeDealId()}">Deal Name</li>
-        </ul>
-    </div>
-
-
 </main>
-<!-- 푸터 -->
+
 <div th:replace="~{footer :: footer}"></div>
 
+// src/main/resources/templates/index.html 내의 스크립트 부분
+
 <script>
-    console.log("<데이터 목록>");
-    console.log("커밍순 타임딜");
-    var scheduledDeals = "[[${scheduledDeals}]]";
-    console.log(scheduledDeals);
+    document.addEventListener('DOMContentLoaded', () => {
+        let stompClient = null;
 
-    console.log("진행중 타임딜");
-    var activeDeals = "[[${activeDeals}]]";
-    console.log(activeDeals);
+        function connectWebSocket() {
+            const socket = new SockJS('/deal-updates');
+            stompClient = Stomp.over(socket);
 
+            stompClient.connect({}, frame => {
+                console.log('Connected: ' + frame);
+                stompClient.subscribe('/deals/updates', message => { // 주제 이름 변경
+                    const deal = JSON.parse(message.body);
+                    updateDealUI(deal);
+                });
+            }, error => {
+                console.error('WebSocket connection error:', error);
+                // 5초 후 재연결 시도
+                setTimeout(connectWebSocket, 5000);
+            });
+        }
+
+        connectWebSocket();
+
+        // 딜 업데이트를 처리하는 함수
+        function updateDealUI(deal) {
+            const productId = deal.productId;
+            const card = document.querySelector(`[data-product-id="${productId}"]`);
+
+            if (card) {
+                // 기존 데이터를 업데이트
+                card.querySelector('.discount-tag').textContent = `-${deal.discountRate}`;
+                card.querySelector('h3').innerHTML = deal.productName; // th:utext와 유사하게 HTML을 렌더링
+                card.querySelector('.original-price').textContent = deal.originalPrice;
+                card.querySelector('.discounted-price').textContent = deal.discountPrice + ' 원';
+                card.querySelector('.stock-quantity span').textContent = deal.stockQuantity;
+
+                // 시간 관련 업데이트
+                if (deal.status === 'ACTIVE') {
+                    // Coming Soon 카드에서 Active 카드로 변경
+                    if (card.classList.contains('coming-soon')) {
+                        card.classList.remove('coming-soon');
+                        card.classList.add('product');
+
+                        // 오버레이 제거
+                        const overlay = card.querySelector('.overlay');
+                        if (overlay) overlay.remove();
+                        const overlayContent = card.querySelector('.overlay-content');
+                        if (overlayContent) overlayContent.remove();
+
+                        // 남은 날짜 카운트다운 제거 및 시간 카운트다운 추가
+                        const daysRemainingElement = card.querySelector('.days-remaining');
+                        if (daysRemainingElement) daysRemainingElement.remove();
+
+                        const timeRemainingElement = card.querySelector('.time-remaining .timer');
+                        if (timeRemainingElement) {
+                            startCountdown(new Date(deal.endTime), timeRemainingElement);
+                        }
+                    }
+                } else if (deal.status === 'SCHEDULED') {
+                    // Active 카드에서 Coming Soon 카드로 변경 (필요 시)
+                    if (card.classList.contains('product')) {
+                        card.classList.remove('product');
+                        card.classList.add('coming-soon');
+
+                        // 오버레이 추가
+                        const overlay = document.createElement('div');
+                        overlay.classList.add('overlay');
+                        card.appendChild(overlay);
+
+                        const overlayContent = document.createElement('div');
+                        overlayContent.classList.add('overlay-content');
+                        overlayContent.textContent = 'Coming Soon';
+                        card.appendChild(overlayContent);
+
+                        // 남은 시간 요소 제거
+                        const timeRemainingElement = card.querySelector('.time-remaining');
+                        if (timeRemainingElement) timeRemainingElement.remove();
+
+                        // 남은 날짜 카운트다운 추가
+                        const daysRemainingElement = document.createElement('div');
+                        daysRemainingElement.classList.add('days-remaining');
+                        daysRemainingElement.innerHTML = '남은 날짜: <span class="days-left">계산 중...</span>일';
+                        card.appendChild(daysRemainingElement);
+
+                        const daysLeftElement = card.querySelector('.days-left');
+                        if (daysLeftElement) {
+                            startDaysCountdown(new Date(deal.endTime), daysLeftElement);
+                        }
+                    }
+                }
+
+                // 기타 필드 업데이트 가능 (예: 가격 변경 등)
+            }
+        }
+
+        // 남은 시간을 계산하여 표시하는 함수
+        function startCountdown(endTime, element) {
+            const updateTimeRemaining = () => {
+                const now = new Date();
+                const timeRemaining = Math.max(endTime - now, 0); // 남은 시간 계산 (밀리초 단위)
+                const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
+                const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
+                const seconds = Math.floor((timeRemaining / 1000) % 60);
+
+                if (timeRemaining > 0) {
+                    element.textContent = `${hours}시간 ${minutes}분 ${seconds}초`;
+                } else {
+                    element.textContent = '마감';
+                    clearInterval(interval);
+                }
+            };
+
+            updateTimeRemaining(); // 초기 호출
+            const interval = setInterval(updateTimeRemaining, 1000); // 매초 업데이트
+        }
+
+        // 남은 날짜를 계산하여 표시하는 함수
+        function startDaysCountdown(endTime, element) {
+            const updateDaysRemaining = () => {
+                const now = new Date();
+                const timeDifference = endTime - now;
+                const daysRemaining = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+
+                if (daysRemaining > 0) {
+                    element.textContent = daysRemaining.toString(); // 문자열로 변환
+                } else {
+                    element.textContent = '0';
+                    clearInterval(interval);
+                }
+            };
+
+            updateDaysRemaining(); // 초기 호출
+            const interval = setInterval(updateDaysRemaining, 86400000); // 매일 업데이트
+        }
+
+        // 기존 타이머 초기화 및 설정 (페이지 로드 시)
+        const initialDealCards = document.querySelectorAll('.product, .coming-soon');
+
+        initialDealCards.forEach(card => {
+            const startTimeAttr = card.getAttribute('data-start-time');
+            const endTimeAttr = card.getAttribute('data-end-time');
+
+            const startTime = new Date(startTimeAttr);
+            const endTime = new Date(endTimeAttr);
+
+            // 딜의 상태에 따라 카운트다운 설정
+            if (card.classList.contains('product')) {
+                const timeLeftElement = card.querySelector('.time-remaining .timer');
+                if (timeLeftElement) {
+                    startCountdown(endTime, timeLeftElement);
+                }
+            }
+
+            if (card.classList.contains('coming-soon')) {
+                const daysLeftElement = card.querySelector('.days-remaining .days-left');
+                if (daysLeftElement) {
+                    startDaysCountdown(endTime, daysLeftElement);
+                }
+            }
+        });
+    });
 </script>
+
 </body>
 </html>
