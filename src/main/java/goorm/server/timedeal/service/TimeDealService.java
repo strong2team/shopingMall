@@ -1,6 +1,7 @@
 package goorm.server.timedeal.service;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -70,5 +71,10 @@ public class TimeDealService {
 		timeDeal = timeDealRepository.save(timeDeal);
 
 		return timeDeal;
+	}
+
+
+	public List<TimeDeal> getActiveAndScheduledDeals() {
+		return timeDealRepository.findActiveAndScheduledDeals();
 	}
 }
