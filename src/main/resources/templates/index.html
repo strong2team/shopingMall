@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>타임딜 서비스</title>
+
+
     <!-- Pretendard 폰트 -->
     <link rel="stylesheet" as="style" crossorigin
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -186,9 +188,40 @@
             </div>
         </div>
     </div>
-</main>
 
+
+    <!-- 여기부터 -->
+    <h1>Time Deals</h1>
+    <div>
+        <h2>Active Deals</h2>
+        <ul>
+            <!-- Thymeleaf로 Active Deals 출력 -->
+            <li th:each="deal : ${activeDeals}" th:text="${deal.getTimeDealId()}">Deal Name</li>
+        </ul>
+    </div>
+    <div>
+        <h2>Scheduled Deals</h2>
+        <ul>
+            <!-- Thymeleaf로 Scheduled Deals 출력 -->
+            <li th:each="deal : ${scheduledDeals}" th:text="${deal.getTimeDealId()}">Deal Name</li>
+        </ul>
+    </div>
+
+
+</main>
 <!-- 푸터 -->
 <div th:replace="~{footer :: footer}"></div>
+
+<script>
+    console.log("<데이터 목록>");
+    console.log("커밍순 타임딜");
+    var scheduledDeals = "[[${scheduledDeals}]]";
+    console.log(scheduledDeals);
+
+    console.log("진행중 타임딜");
+    var activeDeals = "[[${activeDeals}]]";
+    console.log(activeDeals);
+
+</script>
 </body>
 </html>
