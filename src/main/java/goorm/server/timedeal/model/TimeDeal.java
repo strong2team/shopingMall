@@ -38,6 +38,7 @@ public class TimeDeal extends BaseEntity {
 
 	@ManyToOne
 	@JoinColumn(name = "product_id", foreignKey = @ForeignKey(name = "fk_time_deal_product_id"))
+	@JsonIgnore
 	private Product product;
 
 	@ManyToOne
@@ -56,17 +57,21 @@ public class TimeDeal extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	private TimeDealStatus status;
 
+	// 추가된 재고 수량 변수
+	@Column(name = "stock_quantity", nullable = false)
+	private Integer stockQuantity;
+
+
 	@Override
 	public String toString() {
 		return "TimeDeal{" +
 			"timeDealId=" + timeDealId +
 			", product=" + (product != null ? product.getProductId() : "null") +
 			", discountPrice=" + discountPrice +
+			", stockQuantity=" + stockQuantity +
 			", status=" + status +
 			", startTime=" + startTime +
 			", endTime=" + endTime +
 			'}';
 	}
-
-
 }

@@ -1,8 +1,9 @@
 package goorm.server.timedeal.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import goorm.server.timedeal.config.BaseResponse;
 import goorm.server.timedeal.config.BaseResponseStatus;
 import goorm.server.timedeal.dto.ReqTimeDeal;
+import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.enums.UserRole;
 import goorm.server.timedeal.service.TimeDealService;
@@ -29,6 +31,12 @@ public class TimeDealController {
 
 		return userService.isUserRoleByUserId(userId, UserRole.TIME_DEAL_MANAGER);
 	}
+	/**
+	 * 새로운 타임딜을 생성하는 API.
+	 *
+	 * @param timeDealRequest 생성할 타임딜의 정보를 담고 있는 `ReqTimeDeal` 객체.
+	 * @return 생성된 타임딜을 포함한 응답을 반환.
+	 */
 
 	@PostMapping
 	public ResponseEntity<BaseResponse<TimeDeal>> createTimeDeal(@RequestBody ReqTimeDeal timeDealRequest) {
@@ -45,6 +53,42 @@ public class TimeDealController {
 				// 성공 응답 반환
 				response = new BaseResponse<>(BaseResponseStatus.SUCCESS, timeDeal);
 				return new ResponseEntity<>(response, HttpStatus.CREATED);  // 성공적으로 생성
+			} else {
+				// 권한이 없는 경우
+				response = new BaseResponse<>(BaseResponseStatus.FORBIDDEN);
+				return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);  // 403 Forbidden
+			}
+		} catch (Exception e) { // 예외 발생 시 실패 응답
+			response = new BaseResponse<>(BaseResponseStatus.ERROR);
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	/**
+	 * 타임딜의 정보를 수정하는 API.
+	 *
+	 * @param dealId 수정할 타임딜의 고유 ID.
+	 * @param timeDealUpdateRequest 수정할 타임딜의 정보를 담고 있는 `UpdateReqTimeDeal` 객체.
+	 * @return 수정된 타임딜을 포함한 응답을 반환.
+	 */
+	@PatchMapping("/{dealId}")
+	public ResponseEntity<BaseResponse<TimeDeal>> updateTimeDeal(
+		@PathVariable Long dealId,
+		@RequestBody UpdateReqTimeDeal timeDealUpdateRequest) {
+
+		BaseResponse<TimeDeal> response;
+
+		try {
+			// 관리자 여부 확인
+			if (isAdminUser(timeDealUpdateRequest.userId())) {
+
+				// 타임딜 상태 수정
+				TimeDeal updatedTimeDeal = timeDealService.updateTimeDeal(dealId, timeDealUpdateRequest);
+
+				// 성공 응답 반환
+				response = new BaseResponse<>(BaseResponseStatus.SUCCESS, updatedTimeDeal);
+				return new ResponseEntity<>(response, HttpStatus.OK);  // 수정 성공
+
 			} else {
 				// 권한이 없는 경우
 				response = new BaseResponse<>(BaseResponseStatus.FORBIDDEN);
