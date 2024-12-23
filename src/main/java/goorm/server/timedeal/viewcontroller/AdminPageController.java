@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 /**
  * 타임딜 관리자 화면
  * */
-@RequestMapping("/admin/deals")
+@RequestMapping("/v1/admin/deals")
 @Controller
 public class AdminPageController {
 
