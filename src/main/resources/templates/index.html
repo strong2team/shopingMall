@@ -57,7 +57,7 @@
         .discount-tag {
             background-color: #e74c3c;
             color: white;
-            font-size: 1em;
+            font-size: 1.4em;
             padding: 5px 10px;
             border-radius: 15px;
             position: absolute;
@@ -92,7 +92,7 @@
 
         /* 제품 이름 */
         .product h3, .coming-soon h3 {
-            font-size: 1.3em;
+            font-size: 1.2em;
             font-weight: bold;
             color: #2c3e50;
             margin-bottom: 10px;
@@ -102,27 +102,31 @@
         .price-container {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-end; /* 왼쪽 정렬 */
             margin-bottom: 10px;
         }
+
+
+        .discount-rate {
+            color: #e74c3c;
+            font-size: 1.1rem; /* 약간 더 크게 */
+            font-weight: bold;
+            margin-bottom: 5px; /* 가격과 가까워지도록 */
+        }
+
 
         .original-price {
             text-decoration: line-through;
             color: #999;
-            font-size: 0.9rem;
-        }
-
-        .discount-rate {
-            color: #e74c3c;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 0.9rem; /* 폰트를 더 작게 */
         }
 
         .discounted-price {
-            font-size: 1.2rem;
+            font-size: 1.3rem; /* 폰트를 더 크게 */
             font-weight: bold;
             color: #111;
         }
+
 
         /* 남은 시간 및 재고 */
         .time-remaining, .days-remaining, .stock-quantity {
@@ -152,21 +156,26 @@
     <h1>오늘의 타임세일</h1>
     <div class="product-container">
         <!-- Active Time Deals -->
-        <div class="product" th:each="deal : ${activeDeals}" data-end-time="${deal.endTime}">
+        <div class="product" th:each="deal : ${activeDeals}" th:data-end-time="${deal.endTime}">
             <img th:src="${deal.ProductImages}" alt="Product Image">
             <div class="discount-tag" th:text="'-' + ${deal.discountRate} + '%'">Discount</div>
             <h3 th:utext="${deal.productName}">Product Name</h3>
             <div class="price-container">
-                <span class="original-price" th:text="${deal.originalPrice}">Original Price</span>
-                <span class="discounted-price" th:text="${deal.discountPrice}">Discounted Price</span> 원
+                <span class="original-price" th:text="${deal.originalPrice} + '원'">Original Price</span>
+                <div>
+                    <span class="discount-rate" th:text="'-' + ${deal.discountRate} + '%'">Discount Rate</span>
+                    <span class="discounted-price" th:text="${deal.discountPrice} + '원'">Discounted Price</span>
+                </div>
             </div>
             <div class="time-remaining">
                 남은 시간: <span class="timer">계산 중...</span>
             </div>
             <div class="stock-quantity">
-                재고: <span th:text="${deal.stockQuantity}">Stock</span>개
+                남은 재고: <span th:text="${deal.stockQuantity}">Stock</span>개
             </div>
         </div>
+
+
 
         <!-- Coming Soon Deals -->
         <div class="coming-soon" th:each="deal : ${scheduledDeals}" data-end-time="${deal.endTime}">
@@ -195,26 +204,26 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        let stompClient = null;
-
-        function connectWebSocket() {
-            const socket = new SockJS('/deal-updates');
-            stompClient = Stomp.over(socket);
-
-            stompClient.connect({}, frame => {
-                console.log('Connected: ' + frame);
-                stompClient.subscribe('/deals/updates', message => { // 주제 이름 변경
-                    const deal = JSON.parse(message.body);
-                    updateDealUI(deal);
-                });
-            }, error => {
-                console.error('WebSocket connection error:', error);
-                // 5초 후 재연결 시도
-                setTimeout(connectWebSocket, 5000);
-            });
-        }
-
-        connectWebSocket();
+        // let stompClient = null;
+        //
+        // function connectWebSocket() {
+        //     const socket = new SockJS('/deal-updates');
+        //     stompClient = Stomp.over(socket);
+        //
+        //     stompClient.connect({}, frame => {
+        //         console.log('Connected: ' + frame);
+        //         stompClient.subscribe('/deals/updates', message => { // 주제 이름 변경
+        //             const deal = JSON.parse(message.body);
+        //             updateDealUI(deal);
+        //         });
+        //     }, error => {
+        //         console.error('WebSocket connection error:', error);
+        //         // 5초 후 재연결 시도
+        //         setTimeout(connectWebSocket, 5000);
+        //     });
+        // }
+        //
+        // connectWebSocket();
 
         // 딜 업데이트를 처리하는 함수
         function updateDealUI(deal) {
@@ -288,45 +297,81 @@
             }
         }
 
+        document.addEventListener('DOMContentLoaded', () => {
+            const productCards = document.querySelectorAll('.product');
+
+            productCards.forEach(card => {
+                const endTimeAttr = card.getAttribute('data-end-time'); // data-end-time 가져오기
+                console.log('EndTime Attribute:', endTimeAttr); // 로그로 값 확인
+
+                const timerElement = card.querySelector('.timer'); // 타이머 표시 요소
+
+                if (endTimeAttr && timerElement) {
+                    startCountdown(endTimeAttr, timerElement); // 타이머 시작
+                }
+            });
+        });
+
         // 남은 시간을 계산하여 표시하는 함수
         function startCountdown(endTime, element) {
+            const targetTime = new Date(endTime); // ISO 8601 형식 파싱
+            if (isNaN(targetTime.getTime())) {
+                console.error(`Invalid endTime: ${endTime}`);
+                element.textContent = "시간 계산 오류";
+                return;
+            }
+
+            // 타이머 변수 선언
+            let interval;
+
             const updateTimeRemaining = () => {
                 const now = new Date();
-                const timeRemaining = Math.max(endTime - now, 0); // 남은 시간 계산 (밀리초 단위)
+                const timeRemaining = Math.max(targetTime - now, 0); // 남은 시간 계산 (밀리초 단위)
+
                 const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
                 const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
                 const seconds = Math.floor((timeRemaining / 1000) % 60);
 
                 if (timeRemaining > 0) {
-                    element.textContent = `${hours}시간 ${minutes}분 ${seconds}초`;
+                    // HH:MM:SS 형식으로 업데이트
+                    element.textContent = `${hours.toString().padStart(2, '0')}:${minutes
+                        .toString()
+                        .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 } else {
-                    element.textContent = '마감';
+                    // 남은 시간이 0일 때 처리
+                    element.textContent = "마감";
                     clearInterval(interval);
                 }
             };
 
             updateTimeRemaining(); // 초기 호출
-            const interval = setInterval(updateTimeRemaining, 1000); // 매초 업데이트
+            interval = setInterval(updateTimeRemaining, 1000); // 매초 업데이트
         }
+
+
+
 
         // 남은 날짜를 계산하여 표시하는 함수
         function startDaysCountdown(endTime, element) {
+            let interval; // 함수 내부에서 선언하여 스코프 문제 해결
+
             const updateDaysRemaining = () => {
                 const now = new Date();
                 const timeDifference = endTime - now;
                 const daysRemaining = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
 
                 if (daysRemaining > 0) {
-                    element.textContent = daysRemaining.toString(); // 문자열로 변환
+                    element.textContent = daysRemaining.toString(); // 남은 날짜를 업데이트
                 } else {
                     element.textContent = '0';
-                    clearInterval(interval);
+                    clearInterval(interval); // 타이머를 중지
                 }
             };
 
             updateDaysRemaining(); // 초기 호출
-            const interval = setInterval(updateDaysRemaining, 86400000); // 매일 업데이트
+            interval = setInterval(updateDaysRemaining, 86400000); // 매일 업데이트
         }
+
 
         // 기존 타이머 초기화 및 설정 (페이지 로드 시)
         const initialDealCards = document.querySelectorAll('.product, .coming-soon');
@@ -338,7 +383,6 @@
             const startTime = new Date(startTimeAttr);
             const endTime = new Date(endTimeAttr);
 
-            // 딜의 상태에 따라 카운트다운 설정
             if (card.classList.contains('product')) {
                 const timeLeftElement = card.querySelector('.time-remaining .timer');
                 if (timeLeftElement) {
