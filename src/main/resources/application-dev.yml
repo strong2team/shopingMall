@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: timedeal
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 10
+      idle-timeout: 30000
+      connection-timeout: 30000
+      pool-name: HikariCP
+      max-lifetime: 60000
+  jpa:
+    hibernate:
+      ddl-auto: update  # 개발 환경에서만 테이블 자동 업데이트
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Seoul
+        # Envers 관련 설정
+        envers:
+          audit_table_suffix: _AUD  # 변경 이력 테이블 접미사
+          revinfo_table_name: REVINFO  # revision 정보를 담을 테이블 이름
+          revision_field_name: rev_id  # revision 필드 이름
+          revision_type_field_name: rev_type  # revision 타입 필드 이름
+          store_data_at_delete: true  # 삭제된 엔티티에 대한 정보도 기록
+    enable-sql-logging: true  # SQL 로그를 활성화하여, 쿼리 확인

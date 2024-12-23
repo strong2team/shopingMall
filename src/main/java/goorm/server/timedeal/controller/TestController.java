@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Test Controller for TimeDeal Project.
- * Provides dummy endpoints for testing.
+ * Provides health check & dummy endpoints for testing.
  */
 @RestController
 @RequestMapping("/api/test")
@@ -17,8 +17,16 @@ public class TestController {
 		return "Hello, Goorm Team2 TimeDeal!";
 	}
 
+	@GetMapping("/hello2")
+	public String sayHello2() {
+		return "Hello, Goorm Team2 TimeDeal Version2!";
+	}
+
+
 	@GetMapping("/status")
 	public String statusCheck() {
 		return "TimeDeal Project is up and running!";
 	}
+
+
 }
