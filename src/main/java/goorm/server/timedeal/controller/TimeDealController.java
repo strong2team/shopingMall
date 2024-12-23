@@ -2,6 +2,7 @@ package goorm.server.timedeal.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import goorm.server.timedeal.config.BaseResponse;
 import goorm.server.timedeal.config.BaseResponseStatus;
 import goorm.server.timedeal.dto.ReqTimeDeal;
+import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
 import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.enums.UserRole;
@@ -94,6 +96,29 @@ public class TimeDealController {
 				response = new BaseResponse<>(BaseResponseStatus.FORBIDDEN);
 				return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);  // 403 Forbidden
 			}
+		} catch (Exception e) { // 예외 발생 시 실패 응답
+			response = new BaseResponse<>(BaseResponseStatus.ERROR);
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	/**
+	 * 상품 상세 정보를 조회하는 Json API.
+	 *
+	 * @param productId 조회할 상품의 ID.
+	 * @return 상품 상세 정보를 포함한 응답.
+	 */
+	@GetMapping("/{productId}/details")
+	public ResponseEntity<BaseResponse<ResDetailPageTimeDealDto>> getTimeDealDetails(@PathVariable Long productId) {
+		BaseResponse<ResDetailPageTimeDealDto> response;
+
+		try {
+			// 상품 상세 정보 조회
+			ResDetailPageTimeDealDto timeDealDetails = timeDealService.getTimeDealDetails(productId);
+
+			// 성공 응답
+			response = new BaseResponse<>(BaseResponseStatus.SUCCESS, timeDealDetails);
+			return new ResponseEntity<>(response, HttpStatus.OK);
 		} catch (Exception e) { // 예외 발생 시 실패 응답
 			response = new BaseResponse<>(BaseResponseStatus.ERROR);
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);

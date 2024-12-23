@@ -1,9 +1,8 @@
 package goorm.server.timedeal.dto;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
-public record IndexPageTimeDealDto(
+public record ResIndexPageTimeDealDto(
 	Long productId,
 	String ProductImages,
 	String productName,

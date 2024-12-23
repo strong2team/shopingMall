@@ -108,6 +108,16 @@
         .buy-button:hover {
             background-color: #555;
         }
+        /* 제품 이미지 */
+        .product-image img {
+            width: 100%; /* 부모 요소 너비에 맞춤 */
+            /*height: 180px; !* 고정 높이 *!*/
+            object-fit: cover; /* 비율 유지하며 크기에 맞게 잘라냄 */
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+
 
         /* 푸터 */
         footer {
@@ -126,26 +136,35 @@
 <!-- 메인 콘텐츠 -->
 <main>
     <div class="product-container">
-        <div class="timer">13 hours 00 mins 54 secs</div>
+<!--        <div class="timer" th:text="${productDetails.startTime} + ' ~ ' + ${productDetails.endTime}">-->
+<!--            13 hours 00 mins 54 secs-->
+<!--        </div>-->
+<!--        <div class="timer" id="deal-timer" data-end-time="${productDetails.endTime}">-->
+<!--            00:00:00-->
+<!--        </div>-->
+        <div class="timer" id="deal-timer" th:data-end-time="${productDetails.endTime}"></div>
+
+
 
         <div class="product-image">
-            <img src="https://via.placeholder.com/400x300" alt="상품 이미지">
+            <img th:src="${productDetails.productImageUrl}" alt="상품 이미지">
         </div>
 
         <div class="product-info">
-            <div class="brand">아디다스</div>
-            <h2>아디다스 갤럭시 6 GW3848</h2>
+            <div class="brand" th:text="${productDetails.brand}">브랜드</div>
+            <div class="mall-name" th:text="${productDetails.mallName}">쇼핑몰 이름</div>
+            <h2 th:text="${productDetails.productName}">상품명</h2>
 
             <div class="top-section">
-                <span class="deal-countdown">D-3</span>
-                <span class="original-price">36,338원</span>
+                <!-- 남은 일수를 D-ㅇ 형식으로 표시 -->
+                <span class="deal-countdown" id="deal-countdown" th:data-end-time="${productDetails.endTime}"></span>                <span class="original-price" th:text="'₩' + ${productDetails.originalPrice}">36,338원</span>
             </div>
 
             <div class="bottom-section">
-                <span class="stock">30개 남음</span>
+                <span class="stock" th:text="'재고: ' + ${productDetails.stockQuantity} + '개'">30개 남음</span>
                 <div>
-                    <span class="discount">20%</span>
-                    <span class="price">29,070원</span>
+                    <span class="discount" th:text="${productDetails.discountRate}">20%</span>
+                    <span class="price" th:text="'₩' + ${productDetails.discountPrice}">29,070원</span>
                 </div>
             </div>
         </div>
@@ -154,7 +173,65 @@
     </div>
 </main>
 
+
 <!-- 푸터 -->
 <div th:replace="~{footer :: footer}"></div>
+
+<script>
+    function startCountdown() {
+        const countdownElement = document.getElementById('deal-countdown');
+
+        const timerElement = document.getElementById('deal-timer');
+        const endTime = new Date(timerElement.getAttribute('data-end-time'));
+        console.log("endTime:",endTime)
+
+        let intervalId; // `intervalId`를 함수 스코프에서 선언
+
+        function updateTimer() {
+            const now = new Date();
+            const timeLeft = endTime - now;
+            console.log("현재시간:",now,"남은 시간:",timeLeft);
+
+            if (timeLeft > 0) {
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+
+                const hours = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
+                const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+                const seconds = Math.floor((timeLeft / 1000) % 60);
+
+                // deal-countdown에 D-ㅇ 표시 또는 당일 처리
+                if (days === 0) {
+                    countdownElement.textContent = "D-Day"; // "D-Day"로 표시
+                } else {
+                    countdownElement.textContent = `D-${days}`;
+                }
+
+                // timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                // "일, 시간, 분, 초" 형식으로 표시
+                // "D-ㅇ HH:MM:SS" 형식으로 표시
+                timerElement.textContent =
+                    days > 0
+                        ? `D-${days} ` +
+                        `${hours.toString().padStart(2, '0')}:` +
+                        `${minutes.toString().padStart(2, '0')}:` +
+                        `${seconds.toString().padStart(2, '0')}`
+                        : `D-Day ` +
+                        `${hours.toString().padStart(2, '0')}:` +
+                        `${minutes.toString().padStart(2, '0')}:` +
+                        `${seconds.toString().padStart(2, '0')}`;
+
+            } else {
+                timerElement.textContent = "타임딜 종료";
+                clearInterval(intervalId);
+            }
+        }
+
+        updateTimer();
+        intervalId = setInterval(updateTimer, 1000);
+    }
+
+    document.addEventListener('DOMContentLoaded', startCountdown);
+</script>
 </body>
 </html>
