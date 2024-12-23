@@ -1,8 +1,11 @@
 package goorm.server.timedeal.dto;
 
+import static goorm.server.timedeal.model.enums.MessageType.*;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import goorm.server.timedeal.model.TimeDeal;
+import goorm.server.timedeal.model.enums.MessageType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,6 +13,8 @@ import java.time.LocalDateTime;
 
 @Getter @Setter
 public class SQSTimeDealDTO {
+
+	private MessageType messageType;
 
 	private Long timeDealId;
 	private Long userId;
@@ -28,6 +33,7 @@ public class SQSTimeDealDTO {
 	private Integer stockQuantity;
 
 	public SQSTimeDealDTO(TimeDeal timeDeal) {
+		this.messageType = messageType;
 		this.timeDealId = timeDeal.getTimeDealId();
 		this.userId = timeDeal.getUser().getUserId();
 		this.username = timeDeal.getUser().getUsername();
