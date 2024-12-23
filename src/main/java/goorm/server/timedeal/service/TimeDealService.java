@@ -1,9 +1,9 @@
 package goorm.server.timedeal.service;
 
 import java.io.IOException;
-import java.sql.Time;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import goorm.server.timedeal.config.aws.SqsMessageSender;
@@ -19,6 +19,7 @@ import goorm.server.timedeal.repository.ProductImageRepository;
 import goorm.server.timedeal.repository.ProductRepository;
 import goorm.server.timedeal.repository.TimeDealRepository;
 import goorm.server.timedeal.repository.UserRepository;
+import goorm.server.timedeal.service.aws.EventBridgeRuleService;
 import goorm.server.timedeal.service.aws.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -36,10 +37,13 @@ public class TimeDealService {
 	private final SqsMessageSender sqsMessageSender;
 
 	private final S3Service s3Service;
+	private final EventBridgeRuleService eventBridgeRuleService;
+
+	@Value("${cloud.aws.lambda.timedeal-update-arn}") // Lambda ARN (application.yml에 설정)
+	private String timeDealUpdateLambdaArn;
 
 	/**
 	 * 타임딜을 생성하는 메서드.
-	 * 요청받은 `ReqTimeDeal` 객체를 기반으로 새로운 타임딜을 생성하고 데이터베이스에 저장.
 	 *
 	 * @param timeDealRequest 생성할 타임딜의 세부 정보를 담고 있는 `ReqTimeDeal` 객체.
 	 * @return 생성된 타임딜 객체를 반환.
@@ -47,7 +51,6 @@ public class TimeDealService {
 	 */
 	@Transactional
 	public TimeDeal createTimeDeal(ReqTimeDeal timeDealRequest) throws IOException {
-
 		log.info("createTimeDeal 서비스 레이어가 정상적으로 실행되었습니다.");
 
 		// 1. 유저 확인
@@ -61,7 +64,6 @@ public class TimeDealService {
 		product.setMallName(timeDealRequest.mallName());
 		product.setBrand(timeDealRequest.brand());
 		product.setCategory1(timeDealRequest.category1());
-		// 상품 등록
 		product = productRepository.save(product);
 
 		// 3. 이미지 업로드 (S3에 저장하고 URL 반환)
@@ -81,14 +83,16 @@ public class TimeDealService {
 		timeDeal.setEndTime(timeDealRequest.endTime());
 		timeDeal.setDiscountPrice(timeDealRequest.discountPrice());
 		timeDeal.setDiscountPercentage(timeDealRequest.discountPercentage());
-		timeDeal.setUser(user); // 유저 정보 추가 (현재 임시 '1')
-		timeDeal.setStatus(TimeDealStatus.SCHEDULED);  // 초기 상태는 예약됨
+		timeDeal.setUser(user);
+		timeDeal.setStatus(TimeDealStatus.SCHEDULED); // 초기 상태는 예약됨
 		timeDeal.setStockQuantity(timeDealRequest.stockQuantity());
 		timeDeal = timeDealRepository.save(timeDeal);
 
+		// 6. EventBridge Rule 생성
+		createEventBridgeRulesForTimeDeal(timeDeal);
+
 		return timeDeal;
 	}
-
 
 	public List<TimeDeal> getActiveAndScheduledDeals() {
 		return timeDealRepository.findActiveAndScheduledDeals();
@@ -96,7 +100,6 @@ public class TimeDealService {
 
 	/**
 	 * 타임딜의 상태나 속성을 수정하는 메서드.
-	 * 타임딜 ID와 수정할 정보를 담고 있는 `UpdateReqTimeDeal` 객체를 받아 기존 타임딜을 업데이트.
 	 *
 	 * @param dealId 타임딜을 식별하는 고유 ID.
 	 * @param timeDealUpdateRequest 수정할 타임딜 정보를 담고 있는 `UpdateReqTimeDeal`.
@@ -108,11 +111,9 @@ public class TimeDealService {
 		TimeDeal timeDeal = timeDealRepository.findById(dealId)
 			.orElseThrow(() -> new RuntimeException("타임딜을 찾을 수 없습니다."));
 
-		// 상품 이미지 수정 (타임딜의 상품 정보에서 수정)
-
-		// 할인율 수정 (discountRate는 discountPercentage로 적용)
+		// 할인율 수정
 		if (timeDealUpdateRequest.discountRate() != null) {
-			timeDeal.setDiscountPercentage(Double.valueOf(timeDealUpdateRequest.discountRate()));  // 할인율 적용
+			timeDeal.setDiscountPercentage(Double.valueOf(timeDealUpdateRequest.discountRate()));
 		}
 
 		// 시작 시간, 종료 시간 수정
@@ -123,9 +124,9 @@ public class TimeDealService {
 			timeDeal.setEndTime(timeDealUpdateRequest.endTime());
 		}
 
-		// 상태 수정 (TimeDealStatus로 설정)
+		// 상태 수정
 		if (timeDealUpdateRequest.status() != null) {
-			timeDeal.setStatus(TimeDealStatus.valueOf(timeDealUpdateRequest.status()));  // 상태 변경
+			timeDeal.setStatus(TimeDealStatus.valueOf(timeDealUpdateRequest.status()));
 		}
 
 		// 재고 수량 수정
@@ -135,30 +136,40 @@ public class TimeDealService {
 
 		sendTimeDealUpdateMessage(timeDeal);
 
-		// SQS 메시지 생성 및 전송
-		// TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 	@Override
-		// 	public void afterCommit() {
-		// 		System.out.println("나 실행돼?????????");
-		// 		// 트랜잭션 커밋 후 SQS 메시지 전송
-		// 		sendTimeDealUpdateMessage(timeDeal);
-		// 	}
-		// });
-
 		return timeDeal;
-}
+	}
+
+	private void createEventBridgeRulesForTimeDeal(TimeDeal timeDeal) {
+		// 시작 시간 Rule 생성
+		String startRuleName = "TimeDealStart-" + timeDeal.getTimeDealId();
+		String startCron = eventBridgeRuleService.convertToCronExpression(timeDeal.getStartTime());
+		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name());
+		eventBridgeRuleService.createEventBridgeRule(
+			startRuleName,
+			startCron,
+			startPayload,
+			timeDealUpdateLambdaArn
+		);
+
+		// 종료 시간 Rule 생성
+		String endRuleName = "TimeDealEnd-" + timeDeal.getTimeDealId();
+		String endCron = eventBridgeRuleService.convertToCronExpression(timeDeal.getEndTime());
+		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name());
+		eventBridgeRuleService.createEventBridgeRule(
+			endRuleName,
+			endCron,
+			endPayload,
+			timeDealUpdateLambdaArn
+		);
+	}
 
 	private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
 		// SQS 메시지 전송
-		//sqsMessageSender.sendMessage(String.valueOf(timeDeal));
-		// JSON 메시지 전송
 		log.info("SQS 메시지를 전송 시작합니다.");
 		SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
-
 		sqsMessageSender.sendJsonMessage(timeDealDTO);
-		//sqsMessageSender.sendJsonMessage(timeDeal);
 		log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
 	}
-
-
-	}
+}

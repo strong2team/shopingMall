@@ -33,6 +33,10 @@ import lombok.Setter;
 @Getter @Setter
 public class TimeDeal extends BaseEntity {
 
+	public Long getTimeDealId() {
+		return timeDealId;
+	}
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long timeDealId;

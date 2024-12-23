@@ -27,3 +27,5 @@ cloud:
       secretKey: ${AWS_SECRET_KEY}
     sqs:
       queue-name: ${TIMEDEAL_TABLE_QUEUE_NAME}
+    lambda:
+      timedeal-update-arn: ${AWS_LAMBDA_TIMEDEAL_UPDATE_ARN}
