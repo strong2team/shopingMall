@@ -45,6 +45,8 @@ public class TimeDealController {
 
 		BaseResponse<TimeDeal> response;
 
+		System.out.println("timeDealRequest = " + timeDealRequest.startTime());
+
 		try {
 			// 관리자 여부 확인
 			if (isAdminUser(timeDealRequest.userId())) {
