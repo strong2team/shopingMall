@@ -47,6 +47,9 @@ dependencies {
 	// Thymeleaf
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.0'
+
+
 	// S3
 	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 	implementation 'javax.xml.bind:jaxb-api:2.3.1'
@@ -59,7 +62,7 @@ dependencies {
 	// 메시지 큐 (Spring 3.0 버전 이상)
 	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.1")
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
-
+	implementation 'io.awspring.cloud:spring-cloud-starter-aws-messaging:2.4.1'
 
 }
 
