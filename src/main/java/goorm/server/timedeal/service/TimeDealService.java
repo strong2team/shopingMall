@@ -1,10 +1,14 @@
 package goorm.server.timedeal.service;
 
 import java.io.IOException;
+import java.sql.Time;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+
+import goorm.server.timedeal.config.aws.SqsMessageSender;
 import goorm.server.timedeal.dto.ReqTimeDeal;
+import goorm.server.timedeal.dto.SQSTimeDealDTO;
 import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.Product;
 import goorm.server.timedeal.model.ProductImage;
@@ -29,6 +33,8 @@ public class TimeDealService {
 	private final ProductImageRepository productImageRepository;
 	private final TimeDealRepository timeDealRepository;
 	private final UserRepository userRepository;
+	private final SqsMessageSender sqsMessageSender;
+
 	private final S3Service s3Service;
 
 	/**
@@ -127,7 +133,32 @@ public class TimeDealService {
 			timeDeal.setStockQuantity(timeDealUpdateRequest.stockQuantity());
 		}
 
-		// 변경 사항 저장
+		sendTimeDealUpdateMessage(timeDeal);
+
+		// SQS 메시지 생성 및 전송
+		// TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 	@Override
+		// 	public void afterCommit() {
+		// 		System.out.println("나 실행돼?????????");
+		// 		// 트랜잭션 커밋 후 SQS 메시지 전송
+		// 		sendTimeDealUpdateMessage(timeDeal);
+		// 	}
+		// });
+
 		return timeDeal;
-	}
 }
+
+	private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
+		// SQS 메시지 전송
+		//sqsMessageSender.sendMessage(String.valueOf(timeDeal));
+		// JSON 메시지 전송
+		log.info("SQS 메시지를 전송 시작합니다.");
+		SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
+
+		sqsMessageSender.sendJsonMessage(timeDealDTO);
+		//sqsMessageSender.sendJsonMessage(timeDeal);
+		log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
+	}
+
+
+	}
