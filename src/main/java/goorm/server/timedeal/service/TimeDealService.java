@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import goorm.server.timedeal.config.aws.SqsMessageSender;
 import goorm.server.timedeal.dto.ReqTimeDeal;
+import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
 import goorm.server.timedeal.dto.SQSTimeDealDTO;
 import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.Product;
@@ -171,5 +172,49 @@ public class TimeDealService {
 		SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
 		sqsMessageSender.sendJsonMessage(timeDealDTO);
 		log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
+	}
+
+	/**
+	 * 상품 상세 정보를 조회하는 메서드.
+	 *
+	 * @param productId 조회할 상품의 ID.
+	 * @return 상품 상세 정보를 담은 DTO.
+	 */
+	public ResDetailPageTimeDealDto getTimeDealDetails(Long productId) {
+		// 1. 상품에 대한 타임딜 정보 조회
+		TimeDeal timeDeal = timeDealRepository.findByProduct_ProductId(productId)
+			.orElseThrow(() -> new RuntimeException("해당 상품에 대한 타임딜 정보를 찾을 수 없습니다."));
+
+		// 2. 상품 이미지 조회
+		List<String> productImages = productImageRepository.findByProduct_ProductId(productId)
+			.stream()
+			.map(ProductImage::getImageUrl)
+			.toList();
+
+		// 3. DTO 생성 및 반환
+		return new ResDetailPageTimeDealDto(
+			timeDeal.getProduct().getProductId(),
+			//String.join(",", productImages),
+			String.join("", productImages.get(0)), // 단일 이미지로 설정. 나중에 여러 이미지 저장할때는 수정 필요
+			//timeDeal.getProduct().getTitle(),
+			removeHtmlTags(timeDeal.getProduct().getTitle()), // HTML 태그 제거
+			timeDeal.getProduct().getPrice(),
+			timeDeal.getDiscountPrice(),
+			String.format("%d%%", timeDeal.getDiscountPercentage().intValue()),
+			timeDeal.getStartTime(),
+			timeDeal.getEndTime(),
+			timeDeal.getStatus().name(),
+			timeDeal.getStockQuantity(),
+			timeDeal.getProduct().getBrand(),         // 추가
+			timeDeal.getProduct().getMallName()       // 추가
+		);
+	}
+
+	// HTML 태그 제거 유틸리티 메서드
+	private String removeHtmlTags(String input) {
+		if (input == null) {
+			return null;
+		}
+		return input.replaceAll("<[^>]+>", ""); // 정규식으로 HTML 태그 제거
 	}
 }
