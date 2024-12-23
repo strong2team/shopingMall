@@ -44,28 +44,18 @@
         <th>재고</th>
         <th>할인율</th>
         <th>할인 후 가격</th>
+        <th>상태</th> <!-- 상태 열 추가 -->
         <th>관리</th>
       </tr>
       </thead>
       <tbody>
-      <!-- 더미 데이터 -->
-      <tr>
-        <td>상품 A</td>
-        <td>2024-12-20 10:00 ~ 2024-12-21 18:00</td>
-        <td>50</td>
-        <td>20%</td>
-        <td>₩46,202</td>
-        <td>
-          <button class="edit-btn">수정</button>
-          <button class="delete-btn">삭제</button>
-        </td>
-      </tr>
-      <tr>
-        <td>상품 B</td>
-        <td>2024-12-22 09:00 ~ 2024-12-23 20:00</td>
-        <td>30</td>
-        <td>15%</td>
-        <td>₩49,390</td>
+      <tr th:each="deal : ${timeDeals}">
+        <td th:text="${deal.productName}">상품명</td>
+        <td th:text="${deal.startTime + ' ~ ' + deal.endTime}">기간</td>
+        <td th:text="${deal.stockQuantity}">재고</td>
+        <td th:text="${deal.discountRate}">할인율</td>
+        <td th:text="${deal.discountPrice}">할인 후 가격</td>
+        <td th:text="${deal.status}">상태</td> <!-- 상태 표시 -->
         <td>
           <button class="edit-btn">수정</button>
           <button class="delete-btn">삭제</button>

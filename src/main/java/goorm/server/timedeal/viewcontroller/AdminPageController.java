@@ -1,9 +1,14 @@
 package goorm.server.timedeal.viewcontroller;
 
+import java.util.List;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import goorm.server.timedeal.dto.ResTimeDealListDto;
+import goorm.server.timedeal.service.TimeDealService;
 
 /**
  * 타임딜 관리자 화면
@@ -12,8 +17,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 public class AdminPageController {
 
+	private final TimeDealService timeDealService;
+
+	// 생성자 주입
+	public AdminPageController(TimeDealService timeDealService) {
+		this.timeDealService = timeDealService;
+	}
+
+
 	@GetMapping("")
 	public String showTimeDealReservationPage(Model model) {
-		return "deal_admin";  // 뷰를 반환
+		// 타임딜 리스트 가져오기
+		List<ResTimeDealListDto> timeDeals = timeDealService.getTimeDealList();
+
+		// 모델에 타임딜 리스트 추가
+		model.addAttribute("timeDeals", timeDeals);
+
+		// 뷰 반환
+		return "deal_admin";
 	}
 }
