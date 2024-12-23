@@ -1,7 +1,9 @@
 package goorm.server.timedeal.service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Service;
 import goorm.server.timedeal.config.aws.SqsMessageSender;
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
+import goorm.server.timedeal.dto.ResTimeDealListDto;
 import goorm.server.timedeal.dto.SQSTimeDealDTO;
 import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.Product;
@@ -217,4 +220,39 @@ public class TimeDealService {
 		}
 		return input.replaceAll("<[^>]+>", ""); // 정규식으로 HTML 태그 제거
 	}
+
+	/**
+	 * 타임딜 리스트를 가져오는 메서드
+	 */
+	public List<ResTimeDealListDto> getTimeDealList() {
+		List<TimeDeal> timeDeals = timeDealRepository.findAll(); // 예시: 전체 타임딜 조회
+		return timeDeals.stream()
+			.map(deal -> new ResTimeDealListDto(
+				deal.getTimeDealId(),
+				deal.getProduct().getTitle(),
+				deal.getStartTime(),
+				deal.getEndTime(),
+				deal.getStockQuantity(),
+				deal.getDiscountPercentage(),
+				deal.getDiscountPrice(),
+				mapTimeDealStatus(deal.getStartTime(), deal.getEndTime()) // 상태 변환
+			))
+			.collect(Collectors.toList());
+	}
+
+	private String mapTimeDealStatus(LocalDateTime startTime, LocalDateTime endTime) {
+		LocalDateTime now = LocalDateTime.now();
+
+		if (now.isBefore(startTime)) {
+			return "진행전"; // SCHEDULED
+		} else if (now.isAfter(endTime)) {
+			return "종료"; // ENDED
+		} else {
+			return "진행중"; // ACTIVE
+		}
+	}
+
+
+
+
 }
