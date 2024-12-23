@@ -43,7 +43,7 @@ public class HomeController {
 				deal.getProduct().getTitle(),
 				deal.getProduct().getPrice(),
 				deal.getDiscountPrice(),
-				deal.getDiscountPercentage() != null ? deal.getDiscountPercentage() + "%" : "",
+				deal.getDiscountPercentage() != null ? String.valueOf(Math.round(deal.getDiscountPercentage())) : "",
 				deal.getStartTime(),
 				deal.getEndTime(),
 				deal.getStatus().name(),
@@ -77,5 +77,20 @@ public class HomeController {
 		model.addAttribute("scheduledDeals", scheduledDeals);
 
 		return "index";
+	}
+
+	@GetMapping("/products/details")
+	public String timeDealProductDetails(){
+		return "deal_detail";
+	}
+
+	@GetMapping("/sqs-test")
+	public String sqsTest() {
+		return "sqs_test";
+	}
+
+	@GetMapping("/proto")
+	public String protoType() {
+		return "prototype";
 	}
 }
