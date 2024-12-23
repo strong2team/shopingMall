@@ -176,7 +176,8 @@
     const endTime = document.getElementById("endTime").value || "입력 안됨";
     const stock = document.getElementById("stock").value || "입력 안됨";
     const discountRate = document.getElementById("discountRate").value || "입력 안됨";
-    const originalPrice = 57753; // 예시 가격
+    //const originalPrice = 57753; // 예시 가격
+    const originalPrice = selectedProduct.lprice;
     const discountedPrice = (originalPrice - (originalPrice * (discountRate / 100))).toFixed(0);
 
     // 확인 모달 데이터 업데이트
@@ -296,7 +297,8 @@
   // 할인 후 가격 업데이트
   function updatePrice() {
     const discountRate = document.getElementById("discountRate").value;
-    const originalPrice = 57753; // 예시 가격
+    //const originalPrice = 57753; // 예시 가격
+    const originalPrice = selectedProduct.lprice;
     const discountedPrice = (originalPrice - (originalPrice * (discountRate / 100))).toFixed(0);
 
     document.getElementById("pricePreview").textContent = `할인 후 가격: ₩${Math.max(0, discountedPrice).toLocaleString()}`;
