@@ -147,6 +147,15 @@
             font-weight: bold;
         }
 
+        a {
+            text-decoration: none; /* 밑줄 제거 */
+            color: inherit; /* 링크 색상을 부모 요소와 동일하게 유지 */
+        }
+
+        a:hover {
+            text-decoration: underline; /* 호버 시 원하는 스타일 추가 가능 */
+        }
+
     </style>
 </head>
 <body>
@@ -156,10 +165,16 @@
     <h1>오늘의 타임세일</h1>
     <div class="product-container">
         <!-- Active Time Deals -->
-        <div class="product" th:each="deal : ${activeDeals}" th:data-end-time="${deal.endTime}">
-            <img th:src="${deal.ProductImages}" alt="Product Image">
-            <div class="discount-tag" th:text="'-' + ${deal.discountRate} + '%'">Discount</div>
-            <h3 th:utext="${deal.productName}">Product Name</h3>
+        <!-- Active Time Deals -->
+        <div class="product"
+             th:each="deal : ${activeDeals}"
+             th:data-end-time="${deal.endTime}"
+             th:data-product-id="${deal.productId}">
+            <a th:href="'/v1/products/' + ${deal.productId}">
+                <img th:src="${deal.ProductImages}" alt="Product Image">
+                <div class="discount-tag" th:text="'-' + ${deal.discountRate} + '%'">Discount</div>
+                <h3 th:utext="${deal.productName}">Product Name</h3>
+            </a>
             <div class="price-container">
                 <span class="original-price" th:text="${deal.originalPrice} + '원'">Original Price</span>
                 <div>
@@ -199,9 +214,6 @@
 </main>
 
 <div th:replace="~{footer :: footer}"></div>
-
-// src/main/resources/templates/index.html 내의 스크립트 부분
-
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // let stompClient = null;
@@ -321,22 +333,24 @@
                 return;
             }
 
-            // 타이머 변수 선언
-            let interval;
+            let interval; // 타이머 변수 선언
 
             const updateTimeRemaining = () => {
                 const now = new Date();
                 const timeRemaining = Math.max(targetTime - now, 0); // 남은 시간 계산 (밀리초 단위)
+                const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24)); // 남은 일수 계산
 
                 const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
                 const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
                 const seconds = Math.floor((timeRemaining / 1000) % 60);
 
                 if (timeRemaining > 0) {
-                    // HH:MM:SS 형식으로 업데이트
-                    element.textContent = `${hours.toString().padStart(2, '0')}:${minutes
-                        .toString()
-                        .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    // "D-ㅇ HH:MM:SS" 또는 "D-Day HH:MM:SS" 형식으로 업데이트
+                    element.textContent =
+                        (days > 0 ? `D-${days} ` : 'D-Day ') +
+                        `${hours.toString().padStart(2, '0')}:` +
+                        `${minutes.toString().padStart(2, '0')}:` +
+                        `${seconds.toString().padStart(2, '0')}`;
                 } else {
                     // 남은 시간이 0일 때 처리
                     element.textContent = "마감";
@@ -347,6 +361,7 @@
             updateTimeRemaining(); // 초기 호출
             interval = setInterval(updateTimeRemaining, 1000); // 매초 업데이트
         }
+
 
 
 
