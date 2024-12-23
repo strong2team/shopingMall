@@ -27,4 +27,6 @@ public class TestController {
 	public String statusCheck() {
 		return "TimeDeal Project is up and running!";
 	}
+
+
 }

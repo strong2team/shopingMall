@@ -1,4 +1,4 @@
-package goorm.server.timedeal.config;
+package goorm.server.timedeal.config.aws;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

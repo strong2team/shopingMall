@@ -1,11 +1,15 @@
 package goorm.server.timedeal.service;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import goorm.server.timedeal.config.aws.SqsMessageSender;
 import goorm.server.timedeal.dto.ReqTimeDeal;
+import goorm.server.timedeal.dto.SQSTimeDealDTO;
+import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.Product;
 import goorm.server.timedeal.model.ProductImage;
 import goorm.server.timedeal.model.TimeDeal;
@@ -30,12 +34,21 @@ public class TimeDealService {
 	private final ProductImageRepository productImageRepository;
 	private final TimeDealRepository timeDealRepository;
 	private final UserRepository userRepository;
+	private final SqsMessageSender sqsMessageSender;
+
 	private final S3Service s3Service;
 	private final EventBridgeRuleService eventBridgeRuleService;
 
 	@Value("${cloud.aws.lambda.timedeal-update-arn}") // Lambda ARN (application.yml에 설정)
-	private String timeDealUpdateLambdaArn; //"arn:aws:lambda:ap-northeast-2:820242919524:function:CreatetimeDealRule";
+	private String timeDealUpdateLambdaArn;
 
+	/**
+	 * 타임딜을 생성하는 메서드.
+	 *
+	 * @param timeDealRequest 생성할 타임딜의 세부 정보를 담고 있는 `ReqTimeDeal` 객체.
+	 * @return 생성된 타임딜 객체를 반환.
+	 * @throws IOException 타임딜 생성 중 외부 리소스와의 연동 시 IO 예외 발생 시 던져짐.
+	 */
 	@Transactional
 	public TimeDeal createTimeDeal(ReqTimeDeal timeDealRequest) throws IOException {
 		log.info("createTimeDeal 서비스 레이어가 정상적으로 실행되었습니다.");
@@ -71,11 +84,57 @@ public class TimeDealService {
 		timeDeal.setDiscountPrice(timeDealRequest.discountPrice());
 		timeDeal.setDiscountPercentage(timeDealRequest.discountPercentage());
 		timeDeal.setUser(user);
-		timeDeal.setStatus(TimeDealStatus.SCHEDULED);  // 초기 상태는 예약됨
+		timeDeal.setStatus(TimeDealStatus.SCHEDULED); // 초기 상태는 예약됨
+		timeDeal.setStockQuantity(timeDealRequest.stockQuantity());
 		timeDeal = timeDealRepository.save(timeDeal);
 
 		// 6. EventBridge Rule 생성
 		createEventBridgeRulesForTimeDeal(timeDeal);
+
+		return timeDeal;
+	}
+
+	public List<TimeDeal> getActiveAndScheduledDeals() {
+		return timeDealRepository.findActiveAndScheduledDeals();
+	}
+
+	/**
+	 * 타임딜의 상태나 속성을 수정하는 메서드.
+	 *
+	 * @param dealId 타임딜을 식별하는 고유 ID.
+	 * @param timeDealUpdateRequest 수정할 타임딜 정보를 담고 있는 `UpdateReqTimeDeal`.
+	 * @return 업데이트된 타임딜 객체를 반환.
+	 */
+	@Transactional
+	public TimeDeal updateTimeDeal(Long dealId, UpdateReqTimeDeal timeDealUpdateRequest) {
+		// 타임딜 ID로 기존 타임딜 조회
+		TimeDeal timeDeal = timeDealRepository.findById(dealId)
+			.orElseThrow(() -> new RuntimeException("타임딜을 찾을 수 없습니다."));
+
+		// 할인율 수정
+		if (timeDealUpdateRequest.discountRate() != null) {
+			timeDeal.setDiscountPercentage(Double.valueOf(timeDealUpdateRequest.discountRate()));
+		}
+
+		// 시작 시간, 종료 시간 수정
+		if (timeDealUpdateRequest.startTime() != null) {
+			timeDeal.setStartTime(timeDealUpdateRequest.startTime());
+		}
+		if (timeDealUpdateRequest.endTime() != null) {
+			timeDeal.setEndTime(timeDealUpdateRequest.endTime());
+		}
+
+		// 상태 수정
+		if (timeDealUpdateRequest.status() != null) {
+			timeDeal.setStatus(TimeDealStatus.valueOf(timeDealUpdateRequest.status()));
+		}
+
+		// 재고 수량 수정
+		if (timeDealUpdateRequest.stockQuantity() != null) {
+			timeDeal.setStockQuantity(timeDealUpdateRequest.stockQuantity());
+		}
+
+		sendTimeDealUpdateMessage(timeDeal);
 
 		return timeDeal;
 	}
@@ -85,7 +144,7 @@ public class TimeDealService {
 		String startRuleName = "TimeDealStart-" + timeDeal.getTimeDealId();
 		String startCron = eventBridgeRuleService.convertToCronExpression(timeDeal.getStartTime());
 		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name()); // 상태 변경: SCHEDULED → ACTIVE
+			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name());
 		eventBridgeRuleService.createEventBridgeRule(
 			startRuleName,
 			startCron,
@@ -97,12 +156,20 @@ public class TimeDealService {
 		String endRuleName = "TimeDealEnd-" + timeDeal.getTimeDealId();
 		String endCron = eventBridgeRuleService.convertToCronExpression(timeDeal.getEndTime());
 		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name()); // 상태 변경: ACTIVE → ENDED
+			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name());
 		eventBridgeRuleService.createEventBridgeRule(
 			endRuleName,
 			endCron,
 			endPayload,
 			timeDealUpdateLambdaArn
 		);
+	}
+
+	private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
+		// SQS 메시지 전송
+		log.info("SQS 메시지를 전송 시작합니다.");
+		SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
+		sqsMessageSender.sendJsonMessage(timeDealDTO);
+		log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
 	}
 }
