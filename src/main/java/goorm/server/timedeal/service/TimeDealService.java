@@ -18,6 +18,7 @@ import goorm.server.timedeal.model.Product;
 import goorm.server.timedeal.model.ProductImage;
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.User;
+import goorm.server.timedeal.model.enums.MessageType;
 import goorm.server.timedeal.model.enums.TimeDealStatus;
 import goorm.server.timedeal.repository.ProductImageRepository;
 import goorm.server.timedeal.repository.ProductRepository;
@@ -147,8 +148,8 @@ public class TimeDealService {
 		// 시작 시간 Rule 생성
 		String startRuleName = "TimeDealStart-" + timeDeal.getTimeDealId();
 		String startCron = eventBridgeRuleService.convertToCronExpression(timeDeal.getStartTime());
-		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name());
+		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name(), "AUTO_TIME_DEAL_CHANGE"); // message_type 추가
 		eventBridgeRuleService.createEventBridgeRule(
 			startRuleName,
 			startCron,
@@ -159,8 +160,8 @@ public class TimeDealService {
 		// 종료 시간 Rule 생성
 		String endRuleName = "TimeDealEnd-" + timeDeal.getTimeDealId();
 		String endCron = eventBridgeRuleService.convertToCronExpression(timeDeal.getEndTime());
-		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name());
+		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name(), "AUTO_TIME_DEAL_CHANGE"); // message_type 추가
 		eventBridgeRuleService.createEventBridgeRule(
 			endRuleName,
 			endCron,
@@ -169,10 +170,15 @@ public class TimeDealService {
 		);
 	}
 
+
 	private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
 		// SQS 메시지 전송
 		log.info("SQS 메시지를 전송 시작합니다.");
 		SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
+
+		// 메시지 타입 설정
+		timeDealDTO.setMessageType(MessageType.USER_TIME_DEAL_CHANGE);
+
 		sqsMessageSender.sendJsonMessage(timeDealDTO);
 		log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
 	}
@@ -251,8 +257,4 @@ public class TimeDealService {
 			return "진행중"; // ACTIVE
 		}
 	}
-
-
-
-
 }
