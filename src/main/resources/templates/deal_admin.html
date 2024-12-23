@@ -197,32 +197,32 @@
   }
   // 모달에서 사용자가 선택한 값들을 가져오는 함수
   function getModalData() {
-    // 시작 날짜 및 시간
     const startDate = document.getElementById('startDate').value;
     const startTime = document.getElementById('startTime').value;
-    const startDateTimeString = startDate && startTime ? `${startDate}T${startTime}` : null; // 'YYYY-MM-DDTHH:MM' 형식으로 결합
-    const startDateTime = startDateTimeString ? new Date(startDateTimeString).toISOString() : null;
-
-    // 마감 날짜 및 시간
     const endDate = document.getElementById('endDate').value;
     const endTime = document.getElementById('endTime').value;
-    const endDateTimeString = endDate && endTime ? `${endDate}T${endTime}` : null; // 'YYYY-MM-DDTHH:MM' 형식으로 결합
-    const endDateTime = startDateTimeString ? new Date(endDateTimeString).toISOString() : null;
 
-    // 재고
-    const stock = document.getElementById('stock').value;
+    // 'YYYY-MM-DDTHH:mm' 형식으로 결합
+    const startDateTimeString = startDate && startTime ? `${startDate}T${startTime}` : null;
+    const endDateTimeString = endDate && endTime ? `${endDate}T${endTime}` : null;
 
-    // 할인율
-    const discountRate = document.getElementById('discountRate').value;
+    // 로컬 시간 기준 ISO 형식 생성
+    const startDateTime = startDateTimeString ? new Date(startDateTimeString).toISOString() : null;
+    const endDateTime = endDateTimeString ? new Date(endDateTimeString).toISOString() : null;
 
+    // 서버와의 시간 차이를 해결하기 위해 로컬 시간대 오프셋 적용
+    const localOffset = new Date().getTimezoneOffset() * 60000; // 분 단위 오프셋을 밀리초로 변환
+    const adjustedStartDateTime = startDateTime ? new Date(new Date(startDateTime).getTime() - localOffset).toISOString() : null;
+    const adjustedEndDateTime = endDateTime ? new Date(new Date(endDateTime).getTime() - localOffset).toISOString() : null;
 
+    console.log("Adjusted Start DateTime:", adjustedStartDateTime);
+    console.log("Adjusted End DateTime:", adjustedEndDateTime);
 
-    // 입력 받은 데이터 반환
     return {
-      startDateTime,
-      endDateTime,
-      stock,
-      discountRate,
+      startDateTime: adjustedStartDateTime,
+      endDateTime: adjustedEndDateTime,
+      stock: document.getElementById('stock').value,
+      discountRate: document.getElementById('discountRate').value,
     };
   }
 
@@ -276,9 +276,6 @@
       });
 
       const data = await response.json();
-      console.log("22222222")
-      console.log(data);
-      console.log("22222222")
 
       if (data.isSuccess && data.code === 1000) {
         alert('타임딜 예약이 완료되었습니다!');
