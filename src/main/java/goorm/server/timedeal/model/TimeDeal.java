@@ -63,7 +63,6 @@ public class TimeDeal extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	private TimeDealStatus status;
 
-	// 추가된 재고 수량 변수
 	@Column(name = "stock_quantity", nullable = false)
 	private Integer stockQuantity;
 
