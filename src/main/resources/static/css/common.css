@@ -17,10 +17,25 @@ header {
     color: white;
 }
 
-header .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
+.logo {
+    font-family: "Pretendard", sans-serif; /* 공통 폰트 적용 */
+    font-size: 1.5rem; /* 폰트 크기 조정 */
+    font-weight: bold; /* 굵게 표시 */
+    color: whitesmoke; /* 텍스트 색상 */
+    text-decoration: none; /* 링크 밑줄 제거 */
+    display: inline-block; /* 레이아웃 조정 */
+    padding: 10px 15px; /* 간격 추가 */
 }
+
+.logo:hover {
+    color: #555; /* 호버 시 색상 변경 */
+}
+
+
+.logo:hover {
+    color: #555;           /* 호버 시 색상 변경 (예시) */
+}
+
 
 header nav .menu {
     list-style: none;
