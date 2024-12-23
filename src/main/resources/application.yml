@@ -6,6 +6,8 @@ spring:
     name: timedeal
   profiles:
     default: dev
+  thymeleaf:
+    cache: false
 
 naver:
   client-id: ${NAVER_CLIENT_ID}
