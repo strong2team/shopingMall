@@ -17,10 +17,11 @@ public class TestController {
 		return "Hello, Goorm Team2 TimeDeal!";
 	}
 
-	@GetMapping("/hello2")
-	public String sayHello2() {
-		return "Hello, Goorm Team2 TimeDeal Version2!";
+	@GetMapping("/hello3")
+	public String sayHello3() {
+		return "Hello, Goorm Team2 TimeDeal Version3!";
 	}
+
 
 
 	@GetMapping("/status")
