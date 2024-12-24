@@ -39,6 +39,46 @@
         {
           "name": "DB_PASSWORD",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:DB_PASSWORD::"
+        },
+        {
+          "name": "DB_TIMEDEAL_LOCAL_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:DB_TIMEDEAL_LOCAL_URL::"
+        },
+        {
+          "name": "NAVER_CLIENT_ID",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:NAVER_CLIENT_ID::"
+        },
+        {
+          "name": "NAVER_CLIENT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:NAVER_CLIENT_SECRET::"
+        },
+        {
+          "name": "AWS_S3_BUCKET",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:AWS_S3_BUCKET::"
+        },
+        {
+          "name": "AWS_ACCESS_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:AWS_ACCESS_KEY::"
+        },
+        {
+          "name": "AWS_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:AWS_SECRET_KEY::"
+        },
+        {
+          "name": "AWS_REGION",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:AWS_REGION::"
+        },
+        {
+          "name": "AWS_S3_IMAGE_NAME",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:AWS_S3_IMAGE_NAME::"
+        },
+        {
+          "name": "AWS_LAMBDA_TIMEDEAL_UPDATE_ARN",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:AWS_LAMBDA_TIMEDEAL_UPDATE_ARN::"
+        },
+        {
+          "name": "TIMEDEAL_TABLE_QUEUE_NAME",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:TIMEDEAL_TABLE_QUEUE_NAME::"
         }
       ]
     }
@@ -47,4 +87,3 @@
   "cpu": "1024",
   "memory": "3072"
 }
-
