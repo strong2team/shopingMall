@@ -14,16 +14,20 @@ public class TestController {
 
 	@GetMapping("/hello")
 	public String sayHello() {
+		System.out.println("hello에 접속했습니다.");
 		return "Hello, Goorm Team2 TimeDeal!";
 	}
 
 	@GetMapping("/hello3")
 	public String sayHello3() {
+		System.out.println("hello3 에 접속했습니다.");
 		return "Hello, Goorm Team2 TimeDeal Version3!";
 	}
 	@GetMapping("/hello4")
 	public String sayHello4() {
-		return "Hello, 12/24!";
+		System.out.println("hello4 에 접속했습니다.");
+
+		return "Hello, 12/24 hello4() update!After 10:00.";
 	}
 
 
