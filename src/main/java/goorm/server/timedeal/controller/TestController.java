@@ -21,7 +21,10 @@ public class TestController {
 	public String sayHello3() {
 		return "Hello, Goorm Team2 TimeDeal Version3!";
 	}
-
+	@GetMapping("/hello4")
+	public String sayHello4() {
+		return "Hello, 12/24!";
+	}
 
 
 	@GetMapping("/status")
