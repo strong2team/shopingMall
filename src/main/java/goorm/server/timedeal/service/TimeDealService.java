@@ -30,6 +30,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -144,12 +148,30 @@ public class TimeDealService {
 		return timeDeal;
 	}
 
+
 	private void createEventBridgeRulesForTimeDeal(TimeDeal timeDeal) {
-		// 시작 시간 Rule 생성
+		// KST to UTC conversion
+		ZonedDateTime startKST = timeDeal.getStartTime().atZone(ZoneId.of("Asia/Seoul"));
+		ZonedDateTime endKST = timeDeal.getEndTime().atZone(ZoneId.of("Asia/Seoul"));
+
+		// Convert to UTC
+		ZonedDateTime startUTC = startKST.withZoneSameInstant(ZoneId.of("UTC"));
+		ZonedDateTime endUTC = endKST.withZoneSameInstant(ZoneId.of("UTC"));
+
+		// Format the time as a cron expression
+		String startCron = eventBridgeRuleService.convertToCronExpression(startUTC.toLocalDateTime());
+		String endCron = eventBridgeRuleService.convertToCronExpression(endUTC.toLocalDateTime());
+
+		// Prepare payload for EventBridge Rule using UTC times
 		String startRuleName = "TimeDealStart-" + timeDeal.getTimeDealId();
-		String startCron = eventBridgeRuleService.convertToCronExpression(timeDeal.getStartTime());
 		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name(), "AUTO_TIME_DEAL_CHANGE"); // message_type 추가
+			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name(), "AUTO_TIME_DEAL_CHANGE");
+
+		String endRuleName = "TimeDealEnd-" + timeDeal.getTimeDealId();
+		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name(), "AUTO_TIME_DEAL_CHANGE");
+
+		// Create EventBridge Rules using UTC times
 		eventBridgeRuleService.createEventBridgeRule(
 			startRuleName,
 			startCron,
@@ -157,11 +179,6 @@ public class TimeDealService {
 			timeDealUpdateLambdaArn
 		);
 
-		// 종료 시간 Rule 생성
-		String endRuleName = "TimeDealEnd-" + timeDeal.getTimeDealId();
-		String endCron = eventBridgeRuleService.convertToCronExpression(timeDeal.getEndTime());
-		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name(), "AUTO_TIME_DEAL_CHANGE"); // message_type 추가
 		eventBridgeRuleService.createEventBridgeRule(
 			endRuleName,
 			endCron,
