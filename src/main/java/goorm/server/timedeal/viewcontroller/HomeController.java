@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
-@RequestMapping("/api")
+@RequestMapping("/v1")
 public class HomeController {
 
 	private final TimeDealService timeDealService;

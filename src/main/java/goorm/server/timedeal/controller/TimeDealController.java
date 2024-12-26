@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/time-deals")
+@RequestMapping("/api/time-deals")
 public class TimeDealController {
 
 	private final TimeDealService timeDealService;
