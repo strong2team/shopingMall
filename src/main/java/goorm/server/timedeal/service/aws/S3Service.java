@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,36 +21,27 @@ import lombok.extern.slf4j.Slf4j;
 public class S3Service {
 	private final AmazonS3 amazonS3Client;
 	private final RestTemplate restTemplate; // HTTP 요청을 보낼 RestTemplate
-	private final String bucketName = "deepdive2team.shop";  // S3 버킷 이름
+
+	// Load bucket name, CloudFront CNAME, and image folder from application.yml
+	@Value("${cloud.aws.s3.bucket}")
+	private String bucketName;
+
+	@Value("${cloud.aws.cloudfront.cname}")
+	private String cloudFrontCname;
+
+	@Value("${cloud.aws.s3.image-folder}")
+	private String imageFolder;
 
 	public S3Service(AmazonS3 amazonS3Client, RestTemplate restTemplate) {
 		this.amazonS3Client = amazonS3Client;
 		this.restTemplate = restTemplate;
 	}
 
-
-	private String imageFolder = "timedeal-products";
-
-
-	// 이미지 파일을 S3에 업로드하고 URL을 반환
-	public String uploadImage(MultipartFile file) throws IOException {
-		String fileName = "time-deal/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
-		ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentType(file.getContentType());
-		metadata.setContentLength(file.getSize());
-
-		// S3에 파일 업로드
-		amazonS3Client.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
-
-		// 업로드된 파일의 URL 반환
-		return amazonS3Client.getUrl(bucketName, fileName).toString();
-	}
-
 	/**
 	 * URL로 이미지를 받아 S3에 업로드하고, 해당 URL을 반환하는 메서드
 	 */
 	public String uploadImageFromUrl(String imageUrl) throws IOException {
-		log.info("S3 Service-uploadImageFromUrl 업로드하려는 이미지 URL: " + imageUrl);
+		log.info("Uploading image from URL: " + imageUrl);
 
 		// 1. 이미지 URL로 HTTP GET 요청을 보내서 이미지 데이터 가져오기
 		byte[] imageBytes = restTemplate.getForObject(imageUrl, byte[].class);
@@ -73,4 +65,42 @@ public class S3Service {
 		return amazonS3Client.getUrl(bucketName, imageFolder + "/" + fileName).toString();
 	}
 
+	public String uploadImage(MultipartFile file) throws IOException {
+		String fileName = imageFolder + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentType(file.getContentType());
+		metadata.setContentLength(file.getSize());
+
+		// Upload file to S3 bucket
+		amazonS3Client.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
+
+		// Return CloudFront URL
+		return "https://" + cloudFrontCname + "/" + fileName;
+	}
+
+	// Upload image from URL method
+	public String uploadImageFromUrlWithCloudFront(String imageUrl) throws IOException {
+		log.info("Uploading image from URL: " + imageUrl);
+
+		// Fetch image bytes from URL
+		byte[] imageBytes = restTemplate.getForObject(imageUrl, byte[].class);
+
+		// Generate unique file name
+		String fileName = imageFolder + "/" + UUID.randomUUID() + ".jpg";
+
+		// Convert bytes to InputStream
+		assert imageBytes != null;
+		InputStream inputStream = new ByteArrayInputStream(imageBytes);
+
+		// Prepare metadata
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentLength(imageBytes.length);
+		metadata.setContentType("image/jpeg");
+
+		// Upload to S3
+		amazonS3Client.putObject(new PutObjectRequest(bucketName, fileName, inputStream, metadata));
+
+		// Return CloudFront URL
+		return "https://" + cloudFrontCname + "/" + fileName;
+	}
 }

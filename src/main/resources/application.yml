@@ -20,6 +20,8 @@ cloud:
     s3:
       bucket: ${AWS_S3_BUCKET}
       image-folder: ${AWS_S3_IMAGE_NAME}
+    cloudfront:
+      cname: ${AWS_CLOUDFRONT_CNAME}
     stack:
       auto: false
     region:
