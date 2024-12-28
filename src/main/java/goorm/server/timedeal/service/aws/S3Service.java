@@ -1,7 +1,6 @@
 package goorm.server.timedeal.service.aws;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -22,7 +21,6 @@ public class S3Service {
 	private final AmazonS3 amazonS3Client;
 	private final RestTemplate restTemplate; // HTTP 요청을 보낼 RestTemplate
 	private final String bucketName = "deepdive2team.shop";  // S3 버킷 이름
-	private final String logFolder = "logs"; // 로그 파일 폴더
 
 	public S3Service(AmazonS3 amazonS3Client, RestTemplate restTemplate) {
 		this.amazonS3Client = amazonS3Client;
