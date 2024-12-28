@@ -76,7 +76,8 @@ public class TimeDealService {
 		product = productRepository.save(product);
 
 		// 3. 이미지 업로드 (S3에 저장하고 URL 반환)
-		String imageUrl = s3Service.uploadImageFromUrl(timeDealRequest.imageUrl());
+		//String imageUrl = s3Service.uploadImageFromUrl(timeDealRequest.imageUrl());
+		String imageUrl = s3Service.uploadImageFromUrlWithCloudFront(timeDealRequest.imageUrl());
 
 		// 4. 상품 이미지 저장
 		ProductImage productImage = new ProductImage();
