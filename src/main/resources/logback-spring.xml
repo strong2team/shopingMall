@@ -19,7 +19,20 @@
         <secretAccessKey>${AWS_SECRET_KEY}</secretAccessKey>
     </appender>
 
+    <!-- 비동기 Appender -->
+    <appender name="ASYNC_AWS" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>500</queueSize> <!-- 로그 큐 크기 -->
+        <discardingThreshold>0</discardingThreshold> <!-- 큐 가득 찼을 때 버릴 로그 수준 -->
+        <appender-ref ref="aws_cloud_watch_log"/> <!-- 기존 Appender 참조 -->
+    </appender>
+
+    <!-- HTTP 요청/응답 로깅을 위한 로거 추가 -->
+    <logger name="goorm.server.timedeal.config.RequestLoggingFilter" level="INFO">
+        <appender-ref ref="ASYNC_AWS"/>
+    </logger>
+
+    <!-- 루트 로거 설정 -->
     <root level="INFO">
-        <appender-ref ref="aws_cloud_watch_log"/>
+        <appender-ref ref="ASYNC_AWS"/>
     </root>
 </configuration>
