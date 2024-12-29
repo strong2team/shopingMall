@@ -7,7 +7,10 @@ public enum BaseResponseStatus {
 
 	SUCCESS(true, 1000, "요청에 성공하였습니다."),
 	ERROR(false, 2000, "서버 오류가 발생했습니다."),
-	FORBIDDEN(false, 2003, "권한이 없는 유저의 접근입니다.");
+	FORBIDDEN(false, 2003, "권한이 없는 유저의 접근입니다."),
+
+	STOCK_UNAVAILABLE(false, 2010, "재고가 부족합니다.");
+
 
 	/*
 	REQUEST_ERROR(false, 2000, "입력값을 확인해주세요."),
