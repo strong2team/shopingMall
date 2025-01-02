@@ -85,25 +85,8 @@
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:OPENSEARCH_DOMAIN::"
         }
       ]
-    },
-    {
-      "name": "fluent-bit",
-      "image": "amazon/aws-for-fluent-bit:latest",
-      "essential": true,
-      "logConfiguration": {
-        "logDriver": "awsfirelens"
-      },
-      "firelensConfiguration": {
-        "type": "fluentbit",
-        "options": {
-          "enable-ecs-log-metadata": "true",
-          "Name": "es",
-          "Index": "ecs-logs",
-          "AWS_Auth": "On",
-          "tls": "On"
-        }
-      }
     }
+
   ],
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",
