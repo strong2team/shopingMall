@@ -79,8 +79,30 @@
         {
           "name": "TIMEDEAL_TABLE_QUEUE_NAME",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:TIMEDEAL_TABLE_QUEUE_NAME::"
+        },
+        {
+          "name": "OPENSEARCH_DOMAIN",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:OPENSEARCH_DOMAIN::"
         }
       ]
+    },
+    {
+      "name": "fluent-bit",
+      "image": "amazon/aws-for-fluent-bit:latest",
+      "essential": true,
+      "firelensConfiguration": {
+        "type": "fluentbit",
+        "options": {
+          "enable-ecs-log-metadata": "true",
+          "Name": "es",
+          "Host": "${OPENSEARCH_DOMAIN}",
+          "Port": "9200",
+          "Index": "ecs-logs",
+          "AWS_Region": "ap-northeast-2",
+          "AWS_Auth": "On",
+          "tls": "On"
+        }
+      }
     }
   ],
   "requiresCompatibilities": ["FARGATE"],
