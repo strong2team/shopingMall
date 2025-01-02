@@ -76,7 +76,8 @@ public class TimeDealService {
 		product = productRepository.save(product);
 
 		// 3. 이미지 업로드 (S3에 저장하고 URL 반환)
-		String imageUrl = s3Service.uploadImageFromUrl(timeDealRequest.imageUrl());
+		//String imageUrl = s3Service.uploadImageFromUrl(timeDealRequest.imageUrl());
+		String imageUrl = s3Service.uploadImageFromUrlWithCloudFront(timeDealRequest.imageUrl());
 
 		// 4. 상품 이미지 저장
 		ProductImage productImage = new ProductImage();
@@ -219,6 +220,7 @@ public class TimeDealService {
 
 		// 3. DTO 생성 및 반환
 		return new ResDetailPageTimeDealDto(
+			timeDeal.getTimeDealId(),
 			timeDeal.getProduct().getProductId(),
 			//String.join(",", productImages),
 			String.join("", productImages.get(0)), // 단일 이미지로 설정. 나중에 여러 이미지 저장할때는 수정 필요
@@ -274,4 +276,31 @@ public class TimeDealService {
 			return "진행중"; // ACTIVE
 		}
 	}
+
+	/**
+	 * 타임딜 구매 메서드.
+	 * 비관적 락을 사용하여 다중 서버 환경에서 재고 감소를 처리.
+	 *
+	 * @param timeDealId 구매할 타임딜 ID.
+	 * @param quantity   구매 수량.
+	 * @return 구매 성공 여부 메시지.
+	 */
+	@Transactional
+	public String purchaseTimeDeal(Long timeDealId, int quantity) {
+		// 타임딜 조회 시 비관적 락 사용
+		TimeDeal timeDeal = timeDealRepository.findByIdWithLock(timeDealId)
+			.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+
+		// 재고 확인
+		if (timeDeal.getStockQuantity() < quantity) {
+			throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + timeDeal.getStockQuantity() + "개");
+		}
+
+		// 재고 감소
+		timeDeal.setStockQuantity(timeDeal.getStockQuantity() - quantity);
+
+		// 구매 완료 메시지 반환
+		return "구매가 완료되었습니다. 남은 재고: " + timeDeal.getStockQuantity() + "개";
+	}
+
 }

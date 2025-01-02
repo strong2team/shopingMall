@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import goorm.server.timedeal.config.BaseResponse;
@@ -123,6 +124,34 @@ public class TimeDealController {
 			return new ResponseEntity<>(response, HttpStatus.OK);
 		} catch (Exception e) { // 예외 발생 시 실패 응답
 			response = new BaseResponse<>(BaseResponseStatus.ERROR);
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	/**
+	 * 타임딜 구매 API
+	 * @param dealId 구매할 타임딜 ID
+	 * @param quantity 구매 수량
+	 * @return 구매 성공 여부
+	 */
+	@PostMapping("/{dealId}/purchases")
+	public ResponseEntity<BaseResponse<String>> purchaseTimeDeal(
+		@PathVariable Long dealId,
+		@RequestParam int quantity) {
+
+		BaseResponse<String> response;
+
+		try {
+			String resultMessage = timeDealService.purchaseTimeDeal(dealId, quantity);
+			response = new BaseResponse<>(BaseResponseStatus.SUCCESS, resultMessage);
+			return new ResponseEntity<>(response, HttpStatus.OK);
+		} catch (IllegalStateException e) {
+			// 재고 부족 등의 예외 처리
+			response = new BaseResponse<>(BaseResponseStatus.STOCK_UNAVAILABLE, e.getMessage());
+			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			// 기타 예외 처리
+			response = new BaseResponse<>(BaseResponseStatus.ERROR, "구매 실패: " + e.getMessage());
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
