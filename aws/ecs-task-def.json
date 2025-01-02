@@ -98,7 +98,6 @@
         "options": {
           "enable-ecs-log-metadata": "true",
           "Name": "es",
-          "Host": "${OPENSEARCH_DOMAIN}",
           "Index": "ecs-logs",
           "AWS_Auth": "On",
           "tls": "On"
