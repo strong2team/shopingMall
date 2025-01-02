@@ -90,6 +90,9 @@
       "name": "fluent-bit",
       "image": "amazon/aws-for-fluent-bit:latest",
       "essential": true,
+      "logConfiguration": {
+        "logDriver": "awsfirelens"
+      },
       "firelensConfiguration": {
         "type": "fluentbit",
         "options": {
