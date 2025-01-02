@@ -101,7 +101,6 @@
           "Host": "${OPENSEARCH_DOMAIN}",
           "Port": "9200",
           "Index": "ecs-logs",
-          "AWS_Region": "ap-northeast-2",
           "AWS_Auth": "On",
           "tls": "On"
         }
