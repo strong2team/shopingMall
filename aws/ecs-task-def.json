@@ -83,12 +83,20 @@
         {
           "name": "OPENSEARCH_DOMAIN",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:OPENSEARCH_DOMAIN::"
+        },
+        {
+          "name": "REDIS_HOST",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_HOST::"
+        },
+        {
+          "name": "REDIS_PORT",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_PORT::"
         }
       ]
     }
-
   ],
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",
   "memory": "3072"
 }
+
