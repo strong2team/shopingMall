@@ -14,7 +14,7 @@ public class TestController {
 
 	@GetMapping("/hello")
 	public String sayHello() {
-		System.out.println("hello에 접속했습니다.");
+		//System.out.println("hello에 접속했습니다.");
 		return "Hello, Goorm Team2 TimeDeal!";
 	}
 
