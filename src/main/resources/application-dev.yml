@@ -36,7 +36,7 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
+      host: ${REDIS_LOCAL_HOST}
       port: ${REDIS_PORT}
       ssl:
         enabled: false
