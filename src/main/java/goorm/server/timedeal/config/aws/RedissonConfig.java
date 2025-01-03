@@ -20,7 +20,7 @@ public class RedissonConfig {
 	public RedissonClient redissonClient() {
 		Config config = new Config();
 		//config.useSingleServer().setAddress("redis://localhost:6379"); // Redis 주소
-		String redisAddress = String.format("redis://%s:%d", redisHost, redisPort);
+		String redisAddress = String.format("rediss://%s:%d", redisHost, redisPort);
 		config.useSingleServer().setAddress(redisAddress); // Redis 주소 설정
 		return Redisson.create(config);
 	}
