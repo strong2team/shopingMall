@@ -5,11 +5,13 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.data.repository.query.Param;
 
 import goorm.server.timedeal.model.TimeDeal;
+import goorm.server.timedeal.model.enums.TimeDealStatus;
 import jakarta.persistence.LockModeType;
 
 public interface TimeDealRepository extends JpaRepository<TimeDeal, Long>,
@@ -26,5 +28,7 @@ public interface TimeDealRepository extends JpaRepository<TimeDeal, Long>,
 	@Query("SELECT t FROM TimeDeal t WHERE t.timeDealId = :timeDealId")
 	Optional<TimeDeal> findByIdWithLock(@Param("timeDealId") Long timeDealId);
 
-
+	@Modifying
+	@Query("UPDATE TimeDeal t SET t.status = :newStatus WHERE t.timeDealId = :timeDealId")
+	int updateStatus(@Param("timeDealId") Long timeDealId, @Param("newStatus") TimeDealStatus newStatus);
 }
