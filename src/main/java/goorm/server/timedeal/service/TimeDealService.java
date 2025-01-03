@@ -3,12 +3,12 @@ package goorm.server.timedeal.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import goorm.server.timedeal.config.aws.SqsMessageSender;
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
 import goorm.server.timedeal.dto.ResTimeDealListDto;
@@ -43,7 +43,6 @@ public class TimeDealService {
 	private final ProductImageRepository productImageRepository;
 	private final TimeDealRepository timeDealRepository;
 	private final UserRepository userRepository;
-	private final SqsMessageSender sqsMessageSender;
 
 	private final S3Service s3Service;
 	private final EventBridgeRuleService eventBridgeRuleService;
@@ -144,7 +143,7 @@ public class TimeDealService {
 			timeDeal.setStockQuantity(timeDealUpdateRequest.stockQuantity());
 		}
 
-		sendTimeDealUpdateMessage(timeDeal);
+		//sendTimeDealUpdateMessage(timeDeal);
 
 		return timeDeal;
 	}
@@ -165,12 +164,12 @@ public class TimeDealService {
 
 		// Prepare payload for EventBridge Rule using UTC times
 		String startRuleName = "TimeDealStart-" + timeDeal.getTimeDealId();
-		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name(), "AUTO_TIME_DEAL_CHANGE");
+		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name());
 
 		String endRuleName = "TimeDealEnd-" + timeDeal.getTimeDealId();
-		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name(), "AUTO_TIME_DEAL_CHANGE");
+		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name());
 
 		// Create EventBridge Rules using UTC times
 		eventBridgeRuleService.createEventBridgeRule(
@@ -189,17 +188,17 @@ public class TimeDealService {
 	}
 
 
-	private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
-		// SQS 메시지 전송
-		log.info("SQS 메시지를 전송 시작합니다.");
-		SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
-
-		// 메시지 타입 설정
-		timeDealDTO.setMessageType(MessageType.USER_TIME_DEAL_CHANGE);
-
-		sqsMessageSender.sendJsonMessage(timeDealDTO);
-		log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
-	}
+	// private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
+	// 	// SQS 메시지 전송
+	// 	log.info("SQS 메시지를 전송 시작합니다.");
+	// 	SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
+	//
+	// 	// 메시지 타입 설정
+	// 	timeDealDTO.setMessageType(MessageType.USER_TIME_DEAL_CHANGE);
+	//
+	// 	sqsMessageSender.sendJsonMessage(timeDealDTO);
+	// 	log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
+	// }
 
 	/**
 	 * 상품 상세 정보를 조회하는 메서드.
@@ -303,4 +302,18 @@ public class TimeDealService {
 		return "구매가 완료되었습니다. 남은 재고: " + timeDeal.getStockQuantity() + "개";
 	}
 
+	@Transactional
+	public void updateTimeDealStatus(Long timeDealId, TimeDealStatus newStatus) {
+		int updatedRows = timeDealRepository.updateStatus(timeDealId, newStatus);
+		if (updatedRows > 0) {
+			System.out.println("TimeDeal ID: " + timeDealId + " updated to status: " + newStatus);
+		} else {
+			System.out.println("TimeDeal ID: " + timeDealId + " not found or already updated.");
+		}
+	}
+
+	public Optional<TimeDeal> findById(Long timeDealId) {
+		return timeDealRepository.findById(timeDealId);
+
+	}
 }

@@ -11,6 +11,7 @@ spring:
     prefix: classpath:/templates/
     suffix: .html
     enabled: true
+
 naver:
   client-id: ${NAVER_CLIENT_ID}
   client-secret: ${NAVER_CLIENT_SECRET}

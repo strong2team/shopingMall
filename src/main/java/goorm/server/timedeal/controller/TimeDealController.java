@@ -1,5 +1,11 @@
 package goorm.server.timedeal.controller;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,14 +15,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import goorm.server.timedeal.config.BaseResponse;
 import goorm.server.timedeal.config.BaseResponseStatus;
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
+import goorm.server.timedeal.dto.ResIndexPageTimeDealDto;
 import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.TimeDeal;
+import goorm.server.timedeal.model.enums.TimeDealStatus;
 import goorm.server.timedeal.model.enums.UserRole;
 import goorm.server.timedeal.service.TimeDealService;
 import goorm.server.timedeal.service.UserService;
@@ -155,4 +164,30 @@ public class TimeDealController {
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+
+	@GetMapping("/deals/{timeDealId}")
+	public ResponseEntity<ResIndexPageTimeDealDto> getDealById(@PathVariable Long timeDealId) {
+		Optional<TimeDeal> timeDealOpt = timeDealService.findById(timeDealId);
+
+		if (timeDealOpt.isPresent()) {
+			TimeDeal deal = timeDealOpt.get();
+			ResIndexPageTimeDealDto dto = new ResIndexPageTimeDealDto(
+				deal.getProduct().getProductId(),
+				deal.getProduct().getProductImages().get(0).getImageUrl(),
+				deal.getProduct().getTitle(),
+				deal.getProduct().getPrice(),
+				deal.getDiscountPrice(),
+				deal.getDiscountPercentage() != null ? String.valueOf(Math.round(deal.getDiscountPercentage())) : "",
+				deal.getStartTime(),
+				deal.getEndTime(),
+				deal.getStatus().name(),
+				deal.getStockQuantity()
+			);
+
+			return ResponseEntity.ok(dto);
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		}
+	}
+
 }

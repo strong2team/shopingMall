@@ -11,15 +11,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry config) {
-		config.enableSimpleBroker("/deals/updates");
+		// SimpleBroker 경로를 /deals/status-updates로 설정
+		config.enableSimpleBroker("/deals/status-updates");
 		config.setApplicationDestinationPrefixes("/app");
 	}
 
 	// deal-updates; 클라이언트가 WebSocket 연결을 설정하기 위한 URL.
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
-		registry.addEndpoint("/deal-updates").
-			setAllowedOriginPatterns("*") // 모든 도메인 허용
+		registry.addEndpoint("/deal-updates")
+			.setAllowedOriginPatterns("*") // 모든 도메인 허용
 			.withSockJS();
 	}
 }
