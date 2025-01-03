@@ -24,6 +24,24 @@
           "awslogs-stream-prefix": "ecs"
         }
       },
+      "environment": [
+        {
+          "name": "TZ",
+          "value": "Asia/Seoul"
+        },
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "ap-northeast-2"
+        },
+        {
+          "name": "JAVA_TOOL_OPTIONS",
+          "value": "-Xmx1024m -Duser.timezone=Asia/Seoul"
+        }
+      ],
       "secrets": [
         {
           "name": "DB_DRIVER_CLASS_NAME",
