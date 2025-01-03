@@ -27,7 +27,7 @@ public class TestController {
 	public String sayHello4() {
 		System.out.println("hello4 에 접속했습니다.");
 
-		return "Hello, 12/24 hello4() update!After 10:00.";
+		return "Hello, 1/4 hello4() update!After 11:00.";
 	}
 
 
