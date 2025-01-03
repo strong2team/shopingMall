@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%thread] [%date] [%level] [%logger{36}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- HTTP 요청/응답 로거 -->
+    <logger name="http-log" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
