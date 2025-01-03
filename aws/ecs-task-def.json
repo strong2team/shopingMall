@@ -1,6 +1,6 @@
 {
   "family": "shop",
-  "executionRoleArn": "arn:aws:iam::820242919524:role/PRJ-ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::820242919524:role/PRJ-ecsTaskRole",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
