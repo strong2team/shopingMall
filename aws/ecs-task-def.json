@@ -105,7 +105,7 @@
       "secrets": [
         {
           "name": "CONFIG_FILE",
-          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:fluent-bit-config"
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:fluent-bit-config::"
         }
       ],
 
