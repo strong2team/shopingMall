@@ -2,19 +2,25 @@ package goorm.server.timedeal.service.aws;
 
 import java.time.LocalDateTime;
 
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.*;
+import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.lambda.model.AddPermissionRequest;
+import software.amazon.awssdk.services.lambda.model.AddPermissionResponse;
 
 @Service
 @RequiredArgsConstructor
 public class EventBridgeRuleService {
 
 	private final EventBridgeClient eventBridgeClient = EventBridgeClient.create();
+	private final LambdaClient lambdaClient = LambdaClient.create();
+
 
 	/**
-	 * EventBridge Rule 생성
+	 * EventBridge Rule 생성 및 Lambda 트리거 연결
 	 *
 	 * @param ruleName Rule 이름 (고유)
 	 * @param scheduleExpression CRON 표현식
@@ -22,15 +28,32 @@ public class EventBridgeRuleService {
 	 * @param lambdaArn 연결할 Lambda의 ARN
 	 */
 	public void createEventBridgeRule(String ruleName, String scheduleExpression, String inputPayload, String lambdaArn) {
-		// Rule 생성
+		// Step 1: EventBridge Rule 생성
 		PutRuleRequest ruleRequest = PutRuleRequest.builder()
 			.name(ruleName)
 			.scheduleExpression(scheduleExpression)
 			.state(RuleState.ENABLED)
 			.build();
-		eventBridgeClient.putRule(ruleRequest);
 
-		// Lambda Target 연결
+		String ruleArn = eventBridgeClient.putRule(ruleRequest).ruleArn();
+
+		// Step 2: Lambda Permission 추가
+		try {
+			AddPermissionRequest permissionRequest = AddPermissionRequest.builder()
+				.functionName(lambdaArn) // Lambda ARN
+				.statementId("AllowEventBridgeInvoke-" + ruleName) // 고유 Statement ID
+				.action("lambda:InvokeFunction") // Invoke 권한
+				.principal("events.amazonaws.com") // EventBridge 서비스
+				.sourceArn(ruleArn) // Rule ARN
+				.build();
+
+			AddPermissionResponse permissionResponse = lambdaClient.addPermission(permissionRequest);
+			System.out.println("Permission added: " + permissionResponse.statement());
+		} catch (Exception e) {
+			System.err.println("Permission already exists or failed: " + e.getMessage());
+		}
+
+		// Step 3: Lambda를 EventBridge Target으로 연결
 		Target target = Target.builder()
 			.id("1")
 			.arn(lambdaArn) // Lambda ARN
@@ -38,10 +61,17 @@ public class EventBridgeRuleService {
 			.build();
 
 		PutTargetsRequest targetsRequest = PutTargetsRequest.builder()
-			.rule(ruleName)
-			.targets(target)
+			.rule(ruleName) // EventBridge Rule 이름
+			.targets(target) // 연결할 Target
 			.build();
-		eventBridgeClient.putTargets(targetsRequest);
+
+		PutTargetsResponse targetsResponse = eventBridgeClient.putTargets(targetsRequest);
+
+		if (targetsResponse.failedEntryCount() > 0) {
+			System.err.println("Failed to add targets: " + targetsResponse.failedEntries());
+		} else {
+			System.out.println("Target successfully added to the rule.");
+		}
 	}
 
 	/**
