@@ -5,12 +5,15 @@ import java.time.LocalDateTime;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.*;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.AddPermissionRequest;
 import software.amazon.awssdk.services.lambda.model.AddPermissionResponse;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventBridgeRuleService {
@@ -48,9 +51,9 @@ public class EventBridgeRuleService {
 				.build();
 
 			AddPermissionResponse permissionResponse = lambdaClient.addPermission(permissionRequest);
-			System.out.println("Permission added: " + permissionResponse.statement());
+			log.info("Permission added: " + permissionResponse.statement());
 		} catch (Exception e) {
-			System.err.println("Permission already exists or failed: " + e.getMessage());
+			log.error("Permission already exists or failed: " + e.getMessage());
 		}
 
 		// Step 3: Lambda를 EventBridge Target으로 연결
@@ -68,9 +71,9 @@ public class EventBridgeRuleService {
 		PutTargetsResponse targetsResponse = eventBridgeClient.putTargets(targetsRequest);
 
 		if (targetsResponse.failedEntryCount() > 0) {
-			System.err.println("Failed to add targets: " + targetsResponse.failedEntries());
+			log.error("Failed to add targets: " + targetsResponse.failedEntries());
 		} else {
-			System.out.println("Target successfully added to the rule.");
+			log.error("Target successfully added to the rule.");
 		}
 	}
 

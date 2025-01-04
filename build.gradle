@@ -63,8 +63,8 @@ dependencies {
 
 	// 메시지 큐 (Spring 3.0 버전 이상)
 	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.1")
-//	implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
-//	implementation 'io.awspring.cloud:spring-cloud-starter-aws-messaging:2.4.1'
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
+	implementation 'io.awspring.cloud:spring-cloud-starter-aws-messaging:2.4.1'
 
 //	implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
 
