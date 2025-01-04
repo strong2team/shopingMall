@@ -21,7 +21,7 @@
         "options": {
           "awslogs-group": "/ecs/shop",
           "awslogs-region": "ap-northeast-2",
-          "awslogs-stream-prefix": "shop"
+          "awslogs-stream-prefix": "ecs"
         }
       },
       "secrets": [
@@ -80,11 +80,7 @@
         {
           "name": "TIMEDEAL_TABLE_QUEUE_NAME",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:TIMEDEAL_TABLE_QUEUE_NAME::"
-        },
-        {
-          "name": "OPENSEARCH_DOMAIN",
-          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:OPENSEARCH_DOMAIN::"
-        },
+        }
         {
           "name": "REDIS_HOST",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_HOST::"
@@ -92,6 +88,7 @@
         {
           "name": "REDIS_PORT",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_PORT::"
+
         }
       ]
     },
@@ -114,7 +111,7 @@
         "options": {
           "awslogs-group": "/ecs/fluent-bit",
           "awslogs-region": "ap-northeast-2",
-          "awslogs-stream-prefix": "fluent-bit"
+          "awslogs-stream-prefix": "ecs"
         }
       }
     }
