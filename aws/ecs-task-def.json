@@ -96,10 +96,6 @@
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:TIMEDEAL_TABLE_QUEUE_NAME::"
         },
         {
-          "name": "OPENSEARCH_DOMAIN",
-          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:OPENSEARCH_DOMAIN::"
-        },
-        {
           "name": "REDIS_HOST",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_HOST::"
         },
