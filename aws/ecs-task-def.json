@@ -94,6 +94,29 @@
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_PORT::"
         }
       ]
+    },
+    {
+      "name": "fluent-bit",
+      "image": "amazon/aws-for-fluent-bit:latest",
+      "cpu": 256,
+      "memory": 512,
+      "essential": true,
+
+      "secrets": [
+        {
+          "name": "CONFIG_FILE",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:fluent-bit-config"
+        }
+      ],
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/fluent-bit",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
     }
   ],
   "requiresCompatibilities": ["FARGATE"],
