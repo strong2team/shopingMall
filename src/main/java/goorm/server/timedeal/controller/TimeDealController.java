@@ -1,5 +1,11 @@
 package goorm.server.timedeal.controller;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,14 +14,18 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import goorm.server.timedeal.config.BaseResponse;
 import goorm.server.timedeal.config.BaseResponseStatus;
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
+import goorm.server.timedeal.dto.ResIndexPageTimeDealDto;
 import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.TimeDeal;
+import goorm.server.timedeal.model.enums.TimeDealStatus;
 import goorm.server.timedeal.model.enums.UserRole;
 import goorm.server.timedeal.service.TimeDealService;
 import goorm.server.timedeal.service.UserService;
@@ -126,4 +136,58 @@ public class TimeDealController {
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+
+	/**
+	 * 타임딜 구매 API
+	 * @param dealId 구매할 타임딜 ID
+	 * @param quantity 구매 수량
+	 * @return 구매 성공 여부
+	 */
+	@PostMapping("/{dealId}/purchases")
+	public ResponseEntity<BaseResponse<String>> purchaseTimeDeal(
+		@PathVariable Long dealId,
+		@RequestParam int quantity) {
+
+		BaseResponse<String> response;
+
+		try {
+			String resultMessage = timeDealService.purchaseTimeDeal(dealId, quantity);
+			response = new BaseResponse<>(BaseResponseStatus.SUCCESS, resultMessage);
+			return new ResponseEntity<>(response, HttpStatus.OK);
+		} catch (IllegalStateException e) {
+			// 재고 부족 등의 예외 처리
+			response = new BaseResponse<>(BaseResponseStatus.STOCK_UNAVAILABLE, e.getMessage());
+			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			// 기타 예외 처리
+			response = new BaseResponse<>(BaseResponseStatus.ERROR, "구매 실패: " + e.getMessage());
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@GetMapping("/deals/{timeDealId}")
+	public ResponseEntity<ResIndexPageTimeDealDto> getDealById(@PathVariable Long timeDealId) {
+		Optional<TimeDeal> timeDealOpt = timeDealService.findById(timeDealId);
+
+		if (timeDealOpt.isPresent()) {
+			TimeDeal deal = timeDealOpt.get();
+			ResIndexPageTimeDealDto dto = new ResIndexPageTimeDealDto(
+				deal.getProduct().getProductId(),
+				deal.getProduct().getProductImages().get(0).getImageUrl(),
+				deal.getProduct().getTitle(),
+				deal.getProduct().getPrice(),
+				deal.getDiscountPrice(),
+				deal.getDiscountPercentage() != null ? String.valueOf(Math.round(deal.getDiscountPercentage())) : "",
+				deal.getStartTime(),
+				deal.getEndTime(),
+				deal.getStatus().name(),
+				deal.getStockQuantity()
+			);
+
+			return ResponseEntity.ok(dto);
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		}
+	}
+
 }

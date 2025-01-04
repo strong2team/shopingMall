@@ -157,6 +157,9 @@
         }
 
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
 </head>
 <body>
 <div th:replace="~{header :: header}"></div>
@@ -193,7 +196,7 @@
 
 
         <!-- Coming Soon Deals -->
-        <div class="coming-soon" th:each="deal : ${scheduledDeals}" data-end-time="${deal.endTime}">
+        <div class="coming-soon" th:each="deal : ${scheduledDeals}" th:data-product-id="${deal.productId}" th:data-end-time="${deal.endTime}">
             <img th:src="${deal.ProductImages}" alt="Coming Soon Image">
             <div class="overlay"></div>
             <div class="overlay-content">Coming Soon</div>
@@ -216,101 +219,114 @@
 <div th:replace="~{footer :: footer}"></div>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // let stompClient = null;
-        //
-        // function connectWebSocket() {
-        //     const socket = new SockJS('/deal-updates');
-        //     stompClient = Stomp.over(socket);
-        //
-        //     stompClient.connect({}, frame => {
-        //         console.log('Connected: ' + frame);
-        //         stompClient.subscribe('/deals/updates', message => { // 주제 이름 변경
-        //             const deal = JSON.parse(message.body);
-        //             updateDealUI(deal);
-        //         });
-        //     }, error => {
-        //         console.error('WebSocket connection error:', error);
-        //         // 5초 후 재연결 시도
-        //         setTimeout(connectWebSocket, 5000);
-        //     });
-        // }
-        //
-        // connectWebSocket();
+        const socket = new SockJS('/deal-updates'); // WebSocket endpoint
+        const stompClient = Stomp.over(socket);
 
-        // 딜 업데이트를 처리하는 함수
-        function updateDealUI(deal) {
-            const productId = deal.productId;
-            const card = document.querySelector(`[data-product-id="${productId}"]`);
+        stompClient.connect({}, () => {
+            console.log('WebSocket connected.');
 
-            if (card) {
-                // 기존 데이터를 업데이트
-                card.querySelector('.discount-tag').textContent = `-${deal.discountRate}`;
-                card.querySelector('h3').innerHTML = deal.productName; // th:utext와 유사하게 HTML을 렌더링
-                card.querySelector('.original-price').textContent = deal.originalPrice;
-                card.querySelector('.discounted-price').textContent = deal.discountPrice + ' 원';
-                card.querySelector('.stock-quantity span').textContent = deal.stockQuantity;
+            // WebSocket 메시지 수신
+            stompClient.subscribe('/deals/status-updates', (message) => {
+                const update = JSON.parse(message.body);
+                console.log("update==")
+                console.log(update)
+                handleStatusChange(update.timeDealId, update.status, update);
+            });
+        });
 
-                // 시간 관련 업데이트
-                if (deal.status === 'ACTIVE') {
-                    // Coming Soon 카드에서 Active 카드로 변경
-                    if (card.classList.contains('coming-soon')) {
-                        card.classList.remove('coming-soon');
-                        card.classList.add('product');
+        function handleStatusChange(timeDealId, status) {
+            const card = document.querySelector(`[data-product-id="${timeDealId}"]`);
 
-                        // 오버레이 제거
-                        const overlay = card.querySelector('.overlay');
-                        if (overlay) overlay.remove();
-                        const overlayContent = card.querySelector('.overlay-content');
-                        if (overlayContent) overlayContent.remove();
+            if (!card) {
+                console.error(`Card with timeDealId ${timeDealId} not found.`);
+                return;
+            }
 
-                        // 남은 날짜 카운트다운 제거 및 시간 카운트다운 추가
-                        const daysRemainingElement = card.querySelector('.days-remaining');
-                        if (daysRemainingElement) daysRemainingElement.remove();
-
-                        const timeRemainingElement = card.querySelector('.time-remaining .timer');
-                        if (timeRemainingElement) {
-                            startCountdown(new Date(deal.endTime), timeRemainingElement);
+            if (status === 'ACTIVE') {
+                // Fetch deal data from the backend
+                fetch(`/api/time-deals/deals/${timeDealId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch deal data: ${response.status}`);
                         }
-                    }
-                } else if (deal.status === 'SCHEDULED') {
-                    // Active 카드에서 Coming Soon 카드로 변경 (필요 시)
-                    if (card.classList.contains('product')) {
-                        card.classList.remove('product');
-                        card.classList.add('coming-soon');
+                        return response.json();
+                    })
+                    .then(dealData => {
+                        // Update card with the fetched deal data
+                        card.innerHTML = `
+                <a href="/v1/products/${dealData.productId}">
+                    <img src="${dealData.productImage}" alt="Product Image">
+                    <div class="discount-tag">-${dealData.discountRate}%</div>
+                    <h3>${dealData.productName}</h3>
+                </a>
+                <div class="price-container">
+                    <span class="original-price">${dealData.originalPrice}원</span>
+                    <div>
+                        <span class="discount-rate">-${dealData.discountRate}%</span>
+                        <span class="discounted-price">${dealData.discountPrice}원</span>
+                    </div>
+                </div>
+                <div class="time-remaining">
+                    남은 시간: <span class="timer">계산 중...</span>
+                </div>
+                <div class="stock-quantity">
+                    남은 재고: <span>${dealData.stockQuantity}</span>개
+                </div>
+            `;
 
-                        // 오버레이 추가
-                        const overlay = document.createElement('div');
-                        overlay.classList.add('overlay');
-                        card.appendChild(overlay);
-
-                        const overlayContent = document.createElement('div');
-                        overlayContent.classList.add('overlay-content');
-                        overlayContent.textContent = 'Coming Soon';
-                        card.appendChild(overlayContent);
-
-                        // 남은 시간 요소 제거
-                        const timeRemainingElement = card.querySelector('.time-remaining');
-                        if (timeRemainingElement) timeRemainingElement.remove();
-
-                        // 남은 날짜 카운트다운 추가
-                        const daysRemainingElement = document.createElement('div');
-                        daysRemainingElement.classList.add('days-remaining');
-                        daysRemainingElement.innerHTML = '남은 날짜: <span class="days-left">계산 중...</span>일';
-                        card.appendChild(daysRemainingElement);
-
-                        const daysLeftElement = card.querySelector('.days-left');
-                        if (daysLeftElement) {
-                            startDaysCountdown(new Date(deal.endTime), daysLeftElement);
+                        // Start countdown
+                        const timerElement = card.querySelector('.timer');
+                        if (dealData.endTime && timerElement) {
+                            startCountdown(new Date(dealData.endTime), timerElement);
                         }
-                    }
-                }
-
-                // 기타 필드 업데이트 가능 (예: 가격 변경 등)
+                    })
+                    .catch(error => {
+                        console.error(`Error updating card for timeDealId ${timeDealId}:`, error);
+                    });
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const productCards = document.querySelectorAll('.product');
+
+        function startCountdown(endTime, element) {
+            const targetTime = new Date(endTime);
+            if (isNaN(targetTime.getTime())) {
+                console.error(`Invalid endTime: ${endTime}`);
+                element.textContent = "시간 계산 오류";
+                return;
+            }
+
+            const updateTimeRemaining = () => {
+                const now = new Date();
+                const timeRemaining = Math.max(targetTime - now, 0);
+                const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
+                const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
+                const seconds = Math.floor((timeRemaining / 1000) % 60);
+
+                if (timeRemaining > 0) {
+                    element.textContent =
+                        (days > 0 ? `D-${days} ` : 'D-Day ') +
+                        `${hours.toString().padStart(2, '0')}:` +
+                        `${minutes.toString().padStart(2, '0')}:` +
+                        `${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    element.textContent = "마감";
+                    clearInterval(interval);
+                }
+            };
+
+            const interval = setInterval(updateTimeRemaining, 1000);
+            updateTimeRemaining();
+        }
+    });
+
+
+
+
+    //
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const productCards = document.querySelectorAll('.product');
 
             productCards.forEach(card => {
                 const endTimeAttr = card.getAttribute('data-end-time'); // data-end-time 가져오기
@@ -366,6 +382,8 @@
 
 
 
+
+
         // 남은 날짜를 계산하여 표시하는 함수
         function startDaysCountdown(endTime, element) {
             let interval; // 함수 내부에서 선언하여 스코프 문제 해결
@@ -412,7 +430,6 @@
                 }
             }
         });
-    });
 </script>
 
 </body>

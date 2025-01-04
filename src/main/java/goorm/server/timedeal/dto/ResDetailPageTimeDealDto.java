@@ -3,6 +3,7 @@ package goorm.server.timedeal.dto;
 import java.time.LocalDateTime;
 
 public record ResDetailPageTimeDealDto(
+	Long timeDealId,
 	Long productId,
 	String productImageUrl,
 	String productName,

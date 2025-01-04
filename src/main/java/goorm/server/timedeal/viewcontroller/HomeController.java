@@ -67,11 +67,11 @@ public class HomeController {
 				deal.getStockQuantity()
 			))
 			.collect(Collectors.toList());
-
-		System.out.println("scheduledDeals.size() = " + scheduledDeals.size());
-		System.out.println("scheduledDeals = " + scheduledDeals);
-
-		System.out.println("activeDeals = " + activeDeals);
+		//
+		// System.out.println("scheduledDeals.size() = " + scheduledDeals.size());
+		// System.out.println("scheduledDeals = " + scheduledDeals);
+		//
+		// System.out.println("activeDeals = " + activeDeals);
 
 		model.addAttribute("activeDeals", activeDeals);
 		model.addAttribute("scheduledDeals", scheduledDeals);

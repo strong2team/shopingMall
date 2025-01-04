@@ -34,6 +34,14 @@ spring:
           store_data_at_delete: true  # 삭제된 엔티티에 대한 정보도 기록
     enable-sql-logging: true  # SQL 로그를 활성화하여, 쿼리 확인
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      ssl:
+        enabled: false
+
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html # Swagger UI에 접근하는 경로

@@ -1,6 +1,7 @@
 {
   "family": "shop",
   "executionRoleArn": "arn:aws:iam::820242919524:role/PRJ-ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::820242919524:role/PRJ-ecsTaskRole",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
@@ -80,6 +81,15 @@
           "name": "TIMEDEAL_TABLE_QUEUE_NAME",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:TIMEDEAL_TABLE_QUEUE_NAME::"
         }
+        {
+          "name": "REDIS_HOST",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_HOST::"
+        },
+        {
+          "name": "REDIS_PORT",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_PORT::"
+
+        }
       ]
     },
     {
@@ -105,7 +115,6 @@
         }
       }
     }
-
   ],
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",

@@ -3,12 +3,12 @@ package goorm.server.timedeal.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import goorm.server.timedeal.config.aws.SqsMessageSender;
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
 import goorm.server.timedeal.dto.ResTimeDealListDto;
@@ -43,7 +43,6 @@ public class TimeDealService {
 	private final ProductImageRepository productImageRepository;
 	private final TimeDealRepository timeDealRepository;
 	private final UserRepository userRepository;
-	private final SqsMessageSender sqsMessageSender;
 
 	private final S3Service s3Service;
 	private final EventBridgeRuleService eventBridgeRuleService;
@@ -76,7 +75,8 @@ public class TimeDealService {
 		product = productRepository.save(product);
 
 		// 3. 이미지 업로드 (S3에 저장하고 URL 반환)
-		String imageUrl = s3Service.uploadImageFromUrl(timeDealRequest.imageUrl());
+		//String imageUrl = s3Service.uploadImageFromUrl(timeDealRequest.imageUrl());
+		String imageUrl = s3Service.uploadImageFromUrlWithCloudFront(timeDealRequest.imageUrl());
 
 		// 4. 상품 이미지 저장
 		ProductImage productImage = new ProductImage();
@@ -143,7 +143,7 @@ public class TimeDealService {
 			timeDeal.setStockQuantity(timeDealUpdateRequest.stockQuantity());
 		}
 
-		sendTimeDealUpdateMessage(timeDeal);
+		//sendTimeDealUpdateMessage(timeDeal);
 
 		return timeDeal;
 	}
@@ -164,12 +164,12 @@ public class TimeDealService {
 
 		// Prepare payload for EventBridge Rule using UTC times
 		String startRuleName = "TimeDealStart-" + timeDeal.getTimeDealId();
-		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name(), "AUTO_TIME_DEAL_CHANGE");
+		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name());
 
 		String endRuleName = "TimeDealEnd-" + timeDeal.getTimeDealId();
-		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\", \"message_type\": \"%s\"}",
-			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name(), "AUTO_TIME_DEAL_CHANGE");
+		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
+			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name());
 
 		// Create EventBridge Rules using UTC times
 		eventBridgeRuleService.createEventBridgeRule(
@@ -188,17 +188,17 @@ public class TimeDealService {
 	}
 
 
-	private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
-		// SQS 메시지 전송
-		log.info("SQS 메시지를 전송 시작합니다.");
-		SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
-
-		// 메시지 타입 설정
-		timeDealDTO.setMessageType(MessageType.USER_TIME_DEAL_CHANGE);
-
-		sqsMessageSender.sendJsonMessage(timeDealDTO);
-		log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
-	}
+	// private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
+	// 	// SQS 메시지 전송
+	// 	log.info("SQS 메시지를 전송 시작합니다.");
+	// 	SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
+	//
+	// 	// 메시지 타입 설정
+	// 	timeDealDTO.setMessageType(MessageType.USER_TIME_DEAL_CHANGE);
+	//
+	// 	sqsMessageSender.sendJsonMessage(timeDealDTO);
+	// 	log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
+	// }
 
 	/**
 	 * 상품 상세 정보를 조회하는 메서드.
@@ -219,6 +219,7 @@ public class TimeDealService {
 
 		// 3. DTO 생성 및 반환
 		return new ResDetailPageTimeDealDto(
+			timeDeal.getTimeDealId(),
 			timeDeal.getProduct().getProductId(),
 			//String.join(",", productImages),
 			String.join("", productImages.get(0)), // 단일 이미지로 설정. 나중에 여러 이미지 저장할때는 수정 필요
@@ -273,5 +274,46 @@ public class TimeDealService {
 		} else {
 			return "진행중"; // ACTIVE
 		}
+	}
+
+	/**
+	 * 타임딜 구매 메서드.
+	 * 비관적 락을 사용하여 다중 서버 환경에서 재고 감소를 처리.
+	 *
+	 * @param timeDealId 구매할 타임딜 ID.
+	 * @param quantity   구매 수량.
+	 * @return 구매 성공 여부 메시지.
+	 */
+	@Transactional
+	public String purchaseTimeDeal(Long timeDealId, int quantity) {
+		// 타임딜 조회 시 비관적 락 사용
+		TimeDeal timeDeal = timeDealRepository.findByIdWithLock(timeDealId)
+			.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+
+		// 재고 확인
+		if (timeDeal.getStockQuantity() < quantity) {
+			throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + timeDeal.getStockQuantity() + "개");
+		}
+
+		// 재고 감소
+		timeDeal.setStockQuantity(timeDeal.getStockQuantity() - quantity);
+
+		// 구매 완료 메시지 반환
+		return "구매가 완료되었습니다. 남은 재고: " + timeDeal.getStockQuantity() + "개";
+	}
+
+	@Transactional
+	public void updateTimeDealStatus(Long timeDealId, TimeDealStatus newStatus) {
+		int updatedRows = timeDealRepository.updateStatus(timeDealId, newStatus);
+		if (updatedRows > 0) {
+			System.out.println("TimeDeal ID: " + timeDealId + " updated to status: " + newStatus);
+		} else {
+			System.out.println("TimeDeal ID: " + timeDealId + " not found or already updated.");
+		}
+	}
+
+	public Optional<TimeDeal> findById(Long timeDealId) {
+		return timeDealRepository.findById(timeDealId);
+
 	}
 }

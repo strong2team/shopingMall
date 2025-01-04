@@ -11,6 +11,7 @@ spring:
     prefix: classpath:/templates/
     suffix: .html
     enabled: true
+
 naver:
   client-id: ${NAVER_CLIENT_ID}
   client-secret: ${NAVER_CLIENT_SECRET}
@@ -20,6 +21,8 @@ cloud:
     s3:
       bucket: ${AWS_S3_BUCKET}
       image-folder: ${AWS_S3_IMAGE_NAME}
+    cloudfront:
+      cname: ${AWS_CLOUDFRONT_CNAME}
     stack:
       auto: false
     region:
