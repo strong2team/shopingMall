@@ -90,9 +90,6 @@
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_PORT::"
         }
       ]
-    }
-
-      ]
     },
     {
       "name": "fluent-bit",
