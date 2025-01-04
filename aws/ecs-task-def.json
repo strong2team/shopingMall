@@ -93,10 +93,10 @@
       "memory": 512,
       "essential": true,
 
-      "secrets": [
+      "environment": [
         {
-          "name": "CONFIG_FILE",
-          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:fluent-bit-config-EP25Qs"
+          "name": "S3_CONFIG_PATH",
+          "value": "s3://deepdive2team.shop/fluent-bit.conf"
         }
       ],
 
