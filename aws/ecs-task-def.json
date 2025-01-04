@@ -21,7 +21,7 @@
         "options": {
           "awslogs-group": "/ecs/shop",
           "awslogs-region": "ap-northeast-2",
-          "awslogs-stream-prefix": "ecs"
+          "awslogs-stream-prefix": "shop"
         }
       },
       "secrets": [
@@ -105,7 +105,7 @@
       "environment": [
         {
           "name": "S3_CONFIG_PATH",
-          "value": "s3://deepdive2team.shop/fluent-bit.conf"
+          "value": "s3://deepdive2team.shop/config/fluent-bit.conf"
         }
       ],
 
@@ -114,7 +114,7 @@
         "options": {
           "awslogs-group": "/ecs/fluent-bit",
           "awslogs-region": "ap-northeast-2",
-          "awslogs-stream-prefix": "ecs"
+          "awslogs-stream-prefix": "fluent-bit"
         }
       }
     }
