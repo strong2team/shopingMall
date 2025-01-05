@@ -11,14 +11,14 @@ import org.springframework.stereotype.Service;
 
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
+import goorm.server.timedeal.dto.ResPurchase;
 import goorm.server.timedeal.dto.ResTimeDealListDto;
-import goorm.server.timedeal.dto.SQSTimeDealDTO;
 import goorm.server.timedeal.dto.UpdateReqTimeDeal;
 import goorm.server.timedeal.model.Product;
 import goorm.server.timedeal.model.ProductImage;
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.User;
-import goorm.server.timedeal.model.enums.MessageType;
+
 import goorm.server.timedeal.model.enums.TimeDealStatus;
 import goorm.server.timedeal.repository.ProductImageRepository;
 import goorm.server.timedeal.repository.ProductRepository;
@@ -49,6 +49,8 @@ public class TimeDealService {
 
 	@Value("${cloud.aws.lambda.timedeal-update-arn}") // Lambda ARN (application.yml에 설정)
 	private String timeDealUpdateLambdaArn;
+
+	private final PurchaseService purchaseService;
 
 	/**
 	 * 타임딜을 생성하는 메서드.
@@ -154,9 +156,16 @@ public class TimeDealService {
 		ZonedDateTime startKST = timeDeal.getStartTime().atZone(ZoneId.of("Asia/Seoul"));
 		ZonedDateTime endKST = timeDeal.getEndTime().atZone(ZoneId.of("Asia/Seoul"));
 
+		// System.out.println("startKST"+startKST);
+		// System.out.println("endKST"+startKST);
+
+
 		// Convert to UTC
 		ZonedDateTime startUTC = startKST.withZoneSameInstant(ZoneId.of("UTC"));
 		ZonedDateTime endUTC = endKST.withZoneSameInstant(ZoneId.of("UTC"));
+
+		// System.out.println("startUTC"+startUTC);
+		// System.out.println("endUTC"+endUTC);
 
 		// Format the time as a cron expression
 		String startCron = eventBridgeRuleService.convertToCronExpression(startUTC.toLocalDateTime());
@@ -315,5 +324,36 @@ public class TimeDealService {
 	public Optional<TimeDeal> findById(Long timeDealId) {
 		return timeDealRepository.findById(timeDealId);
 
+	}
+
+	/**
+	 * 테스트용 타임딜 구매 메서드
+	 *
+	 * @param timeDealId 구매할 타임딜 ID
+	 * @param userId     구매할 유저 ID
+	 * @param quantity   구매 수량
+	 * @return 구매 완료 메시지
+	 */
+	@Transactional
+	public ResPurchase testPurchaseTimeDeal(Long timeDealId, Long userId, int quantity) {
+		// 유저 존재 여부 확인
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+
+		// 타임딜 조회 시 비관적 락 사용
+		TimeDeal timeDeal = timeDealRepository.findByIdWithLock(timeDealId)
+			.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+
+		// 재고 확인
+		if (timeDeal.getStockQuantity() < quantity) {
+			throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + timeDeal.getStockQuantity() + "개");
+		}
+
+		// 재고 감소
+		timeDeal.setStockQuantity(timeDeal.getStockQuantity() - quantity);
+		timeDealRepository.save(timeDeal);
+
+		// 구매 기록 생성 및 저장
+		return purchaseService.createPurchaseRecord(timeDeal, user, quantity);
 	}
 }
