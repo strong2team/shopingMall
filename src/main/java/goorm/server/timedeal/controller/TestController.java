@@ -14,7 +14,7 @@ public class TestController {
 
 	@GetMapping("/hello")
 	public String sayHello() {
-		System.out.println("hello에 접속했습니다.");
+		//System.out.println("hello에 접속했습니다.");
 		return "Hello, Goorm Team2 TimeDeal!";
 	}
 
@@ -27,7 +27,7 @@ public class TestController {
 	public String sayHello4() {
 		System.out.println("hello4 에 접속했습니다.");
 
-		return "Hello, 12/24 hello4() update!After 10:00.";
+		return "Hello, 1/7 hello4() update!After 5:00.";
 	}
 
 

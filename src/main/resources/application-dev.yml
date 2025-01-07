@@ -39,7 +39,9 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       ssl:
-        enabled: false
+        enabled: true
+
+
 
 
 springdoc:

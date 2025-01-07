@@ -3,16 +3,31 @@ package goorm.server.timedeal.config.aws;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
 public class RedissonConfig {
 
 	@Bean
-	public RedissonClient redissonClient() {
+	@Profile("dev")
+	public RedissonClient redissonClientLocal(@Value("${spring.data.redis.host}") String redisHost,
+		@Value("${spring.data.redis.port}") int redisPort) {
 		Config config = new Config();
-		config.useSingleServer().setAddress("redis://localhost:6379"); // Redis 주소
+		String redisAddress = String.format("redis://%s:%d", redisHost, redisPort);
+		config.useSingleServer().setAddress(redisAddress);
+		return Redisson.create(config);
+	}
+
+	@Bean
+	@Profile("prod")
+	public RedissonClient redissonClientProd(@Value("${spring.data.redis.host}") String redisHost,
+		@Value("${spring.data.redis.port}") int redisPort) {
+		Config config = new Config();
+		String redisAddress = String.format("rediss://%s:%d", redisHost, redisPort);
+		config.useSingleServer().setAddress(redisAddress);
 		return Redisson.create(config);
 	}
 }

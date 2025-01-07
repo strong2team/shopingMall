@@ -23,7 +23,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Audited
+//@Audited
 @Table(name = "product_image")
 public class ProductImage extends BaseEntity {
 

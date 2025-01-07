@@ -59,6 +59,8 @@ dependencies {
 	implementation platform('software.amazon.awssdk:bom:2.20.56')
 	// EventBridge
 	implementation 'software.amazon.awssdk:eventbridge'
+	implementation 'software.amazon.awssdk:lambda'
+
 	// 메시지 큐 (Spring 3.0 버전 이상)
 	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.1")
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
@@ -69,9 +71,11 @@ dependencies {
 
 	implementation 'org.redisson:redisson-spring-boot-starter:3.20.0'
 
-	implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
 	//log
-    implementation "ca.pjer:logback-awslogs-appender:1.6.0"
+	implementation "ca.pjer:logback-awslogs-appender:1.6.0"
+
+	implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
+
 
 
 }

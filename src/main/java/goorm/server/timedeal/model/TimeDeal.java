@@ -27,8 +27,8 @@ import lombok.Setter;
 
 
 @Entity
-@Audited
-@AuditTable(schema = "audit", value = "time_deal_audit")
+//@Audited
+//@AuditTable(schema = "audit", value = "time_deal_audit")
 @Table(name = "time_deal")
 @Getter @Setter
 public class TimeDeal extends BaseEntity {

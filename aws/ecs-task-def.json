@@ -24,6 +24,12 @@
           "awslogs-stream-prefix": "ecs"
         }
       },
+      "environment": [
+        {
+          "name": "TZ",
+          "value": "Asia/Seoul"
+        }
+      ],
       "secrets": [
         {
           "name": "DB_DRIVER_CLASS_NAME",
@@ -40,6 +46,14 @@
         {
           "name": "DB_PASSWORD",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:DB_PASSWORD::"
+        },
+        {
+          "name": "AWS_CLOUDFRONT_CNAME",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:AWS_CLOUDFRONT_CNAME::"
+        },
+        {
+          "name": "AWS_S3_IMAGE_FOLDER",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:AWS_S3_IMAGE_FOLDER::"
         },
         {
           "name": "DB_TIMEDEAL_LOCAL_URL",
@@ -88,6 +102,12 @@
         {
           "name": "REDIS_PORT",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:REDIS_PORT::"
+        },
+        {
+          "name": "DB_PROD_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:DB_PROD_URL::"
+
+
         }
       ]
     },

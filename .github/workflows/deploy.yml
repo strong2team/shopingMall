@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - develop  # develop 브랜치에 푸시될 때 트리거 - V2
+      - develop #feature/eventbridge-redis-and-cloudwatch-logback  # develop 브랜치에 푸시될 때 트리거 - V2
 
 env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
