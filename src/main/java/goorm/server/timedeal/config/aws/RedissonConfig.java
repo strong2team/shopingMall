@@ -6,22 +6,28 @@ import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
 public class RedissonConfig {
 
-	@Value("${spring.data.redis.host}")
-	private String redisHost;
-
-	@Value("${spring.data.redis.port}")
-	private int redisPort;
+	@Bean
+	@Profile("dev")
+	public RedissonClient redissonClientLocal(@Value("${spring.data.redis.host}") String redisHost,
+		@Value("${spring.data.redis.port}") int redisPort) {
+		Config config = new Config();
+		String redisAddress = String.format("redis://%s:%d", redisHost, redisPort);
+		config.useSingleServer().setAddress(redisAddress);
+		return Redisson.create(config);
+	}
 
 	@Bean
-	public RedissonClient redissonClient() {
+	@Profile("prod")
+	public RedissonClient redissonClientProd(@Value("${spring.data.redis.host}") String redisHost,
+		@Value("${spring.data.redis.port}") int redisPort) {
 		Config config = new Config();
-		//config.useSingleServer().setAddress("redis://localhost:6379"); // Redis 주소
 		String redisAddress = String.format("rediss://%s:%d", redisHost, redisPort);
-		config.useSingleServer().setAddress(redisAddress); // Redis 주소 설정
+		config.useSingleServer().setAddress(redisAddress);
 		return Redisson.create(config);
 	}
 }

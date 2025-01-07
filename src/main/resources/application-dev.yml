@@ -8,7 +8,7 @@ spring:
     name: timedeal
   datasource:
     driver-class-name: ${DB_DRIVER_CLASS_NAME}
-    url: ${DB_URL}
+    url: ${DB_PROD_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
@@ -36,7 +36,7 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
+      host: ${REDIS_LOCAL_HOST}
       port: ${REDIS_PORT}
       ssl:
         enabled: true
