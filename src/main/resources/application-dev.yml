@@ -42,6 +42,8 @@ spring:
         enabled: true
 
 
+
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html # Swagger UI에 접근하는 경로

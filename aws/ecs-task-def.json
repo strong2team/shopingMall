@@ -106,8 +106,33 @@
         {
           "name": "DB_PROD_URL",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:DB_PROD_URL::"
+
+
         }
       ]
+    },
+    {
+      "name": "fluent-bit",
+      "image": "amazon/aws-for-fluent-bit:latest",
+      "cpu": 256,
+      "memory": 512,
+      "essential": true,
+
+      "environment": [
+        {
+          "name": "S3_CONFIG_PATH",
+          "value": "s3://deepdive2team.shop/config/fluent-bit.conf"
+        }
+      ],
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/fluent-bit",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
     }
   ],
   "requiresCompatibilities": ["FARGATE"],

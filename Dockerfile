@@ -27,4 +27,3 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 # 컨테이너 포트 노출
 EXPOSE 8080
-
