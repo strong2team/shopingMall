@@ -24,8 +24,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Audited
-@AuditTable(schema = "audit", value = "purchase_audit")
+//@Audited
+//@AuditTable(schema = "audit", value = "purchase_audit")
 @Table(name = "purchase")
 public class Purchase extends BaseEntity {
 

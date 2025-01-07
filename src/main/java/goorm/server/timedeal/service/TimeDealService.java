@@ -356,4 +356,22 @@ public class TimeDealService {
 		// 구매 기록 생성 및 저장
 		return purchaseService.createPurchaseRecord(timeDeal, user, quantity);
 	}
+
+	/**
+	 * 특정 타임딜의 남은 재고 수량을 반환하는 메서드.
+	 *
+	 * @param timeDealId 조회할 타임딜 ID.
+	 * @return 남은 재고 수량 (정수값).
+	 * @throws IllegalArgumentException 유효하지 않은 타임딜 ID일 경우 예외 발생.
+	 */
+	public int getRemainingStock(Long timeDealId) {
+		// 타임딜 ID로 해당 타임딜 조회
+		TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
+			.orElseThrow(() -> new IllegalArgumentException("유효하지 않은 타임딜 ID입니다: " + timeDealId));
+
+		// 남은 재고 수량 반환
+		int remainingStock = timeDeal.getStockQuantity();
+		log.info("TimeDeal ID: {}, Remaining Stock: {}", timeDealId, remainingStock);
+		return remainingStock;
+	}
 }

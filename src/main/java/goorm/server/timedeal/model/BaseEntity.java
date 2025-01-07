@@ -7,8 +7,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
@@ -18,7 +16,7 @@ import lombok.Setter;
 
 @EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
-@Audited
+//@Audited
 @Getter
 @Setter
 @NoArgsConstructor

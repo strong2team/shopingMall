@@ -18,8 +18,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Audited
-@AuditTable(schema = "audit", value = "user_audit")
+//@Audited
+//@AuditTable(schema = "audit", value = "user_audit")
 @Table(name = "user")
 @Getter @Setter
 public class User extends BaseEntity {
