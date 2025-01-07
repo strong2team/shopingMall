@@ -8,7 +8,7 @@ spring:
     name: timedeal
   datasource:
     driver-class-name: ${DB_DRIVER_CLASS_NAME}
-    url: ${DB_PROD_URL}
+    url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
