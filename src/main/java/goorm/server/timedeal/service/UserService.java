@@ -41,4 +41,8 @@ public class UserService {
 			.orElseThrow(() -> new NoSuchElementException("User not found with ID " + userId)); // 기본 예외 처리
 		return user.getRole().equals(role);
 	}
+	public User findById(Long userId) {
+		return userRepository.findById(userId)
+			.orElseThrow(() -> new IllegalArgumentException("유효하지 않은 유저입니다."));
+	}
 }

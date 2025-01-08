@@ -11,19 +11,15 @@ import org.springframework.stereotype.Service;
 
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
-import goorm.server.timedeal.dto.ResPurchase;
+import goorm.server.timedeal.dto.ResPurchaseDto;
 import goorm.server.timedeal.dto.ResTimeDealListDto;
-import goorm.server.timedeal.dto.UpdateReqTimeDeal;
+import goorm.server.timedeal.dto.ReqUpdateTimeDeal;
 import goorm.server.timedeal.model.Product;
-import goorm.server.timedeal.model.ProductImage;
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.User;
 
 import goorm.server.timedeal.model.enums.TimeDealStatus;
-import goorm.server.timedeal.repository.ProductImageRepository;
-import goorm.server.timedeal.repository.ProductRepository;
 import goorm.server.timedeal.repository.TimeDealRepository;
-import goorm.server.timedeal.repository.UserRepository;
 import goorm.server.timedeal.service.aws.EventBridgeRuleService;
 import goorm.server.timedeal.service.aws.S3Service;
 import jakarta.transaction.Transactional;
@@ -32,25 +28,25 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class TimeDealService {
 
-	private final ProductRepository productRepository;
-	private final ProductImageRepository productImageRepository;
+	private final UserService userService;
+	private final ProductService productService;
+	private final ProductImageService productImageService;
+	private final PurchaseService purchaseService;
+
 	private final TimeDealRepository timeDealRepository;
-	private final UserRepository userRepository;
 
 	private final S3Service s3Service;
 	private final EventBridgeRuleService eventBridgeRuleService;
 
-	@Value("${cloud.aws.lambda.timedeal-update-arn}") // Lambda ARN (application.yml에 설정)
+	@Value("${cloud.aws.lambda.timedeal-update-arn}")
 	private String timeDealUpdateLambdaArn;
 
-	private final PurchaseService purchaseService;
 
 	/**
 	 * 타임딜을 생성하는 메서드.
@@ -64,30 +60,28 @@ public class TimeDealService {
 		log.info("createTimeDeal 서비스 레이어가 정상적으로 실행되었습니다.");
 
 		// 1. 유저 확인
-		User user = userRepository.findById(timeDealRequest.userId())
-			.orElseThrow(() -> new IllegalArgumentException("유효하지 않은 유저입니다."));
+		User user = userService.findById(timeDealRequest.userId());
 
 		// 2. 상품 등록
-		Product product = new Product();
-		product.setTitle(timeDealRequest.title());
-		product.setPrice(timeDealRequest.price());
-		product.setMallName(timeDealRequest.mallName());
-		product.setBrand(timeDealRequest.brand());
-		product.setCategory1(timeDealRequest.category1());
-		product = productRepository.save(product);
+		Product product = productService.createProduct(timeDealRequest);
 
 		// 3. 이미지 업로드 (S3에 저장하고 URL 반환)
-		//String imageUrl = s3Service.uploadImageFromUrl(timeDealRequest.imageUrl());
 		String imageUrl = s3Service.uploadImageFromUrlWithCloudFront(timeDealRequest.imageUrl());
 
 		// 4. 상품 이미지 저장
-		ProductImage productImage = new ProductImage();
-		productImage.setProduct(product);
-		productImage.setImageUrl(imageUrl);
-		productImage.setImageType("thumbnail");
-		productImageRepository.save(productImage);
+		productImageService.saveProductImage(product, imageUrl, "thumbnail");
+
 
 		// 5. 타임딜 예약 생성
+		TimeDeal timeDeal = saveTimeDeal(timeDealRequest, product, user);
+
+		// 6. EventBridge Rule 생성
+		createEventBridgeRulesForTimeDeal(timeDeal);
+
+		return timeDeal;
+	}
+
+	private TimeDeal saveTimeDeal(ReqTimeDeal timeDealRequest, Product product, User user) {
 		TimeDeal timeDeal = new TimeDeal();
 		timeDeal.setProduct(product);
 		timeDeal.setStartTime(timeDealRequest.startTime());
@@ -98,10 +92,6 @@ public class TimeDealService {
 		timeDeal.setStatus(TimeDealStatus.SCHEDULED); // 초기 상태는 예약됨
 		timeDeal.setStockQuantity(timeDealRequest.stockQuantity());
 		timeDeal = timeDealRepository.save(timeDeal);
-
-		// 6. EventBridge Rule 생성
-		createEventBridgeRulesForTimeDeal(timeDeal);
-
 		return timeDeal;
 	}
 
@@ -117,7 +107,7 @@ public class TimeDealService {
 	 * @return 업데이트된 타임딜 객체를 반환.
 	 */
 	@Transactional
-	public TimeDeal updateTimeDeal(Long dealId, UpdateReqTimeDeal timeDealUpdateRequest) {
+	public TimeDeal updateTimeDeal(Long dealId, ReqUpdateTimeDeal timeDealUpdateRequest) {
 		// 타임딜 ID로 기존 타임딜 조회
 		TimeDeal timeDeal = timeDealRepository.findById(dealId)
 			.orElseThrow(() -> new RuntimeException("타임딜을 찾을 수 없습니다."));
@@ -145,8 +135,6 @@ public class TimeDealService {
 			timeDeal.setStockQuantity(timeDealUpdateRequest.stockQuantity());
 		}
 
-		//sendTimeDealUpdateMessage(timeDeal);
-
 		return timeDeal;
 	}
 
@@ -160,18 +148,14 @@ public class TimeDealService {
 		// System.out.println("endKST"+startKST);
 
 
-		// Convert to UTC
+		// 1. UTC 로 변환
 		ZonedDateTime startUTC = startKST.withZoneSameInstant(ZoneId.of("UTC"));
 		ZonedDateTime endUTC = endKST.withZoneSameInstant(ZoneId.of("UTC"));
 
-		// System.out.println("startUTC"+startUTC);
-		// System.out.println("endUTC"+endUTC);
-
-		// Format the time as a cron expression
+		// 2. cron expression 포맷팅
 		String startCron = eventBridgeRuleService.convertToCronExpression(startUTC.toLocalDateTime());
 		String endCron = eventBridgeRuleService.convertToCronExpression(endUTC.toLocalDateTime());
 
-		// Prepare payload for EventBridge Rule using UTC times
 		String startRuleName = "TimeDealStart-" + timeDeal.getTimeDealId();
 		String startPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
 			timeDeal.getTimeDealId(), TimeDealStatus.ACTIVE.name());
@@ -180,7 +164,7 @@ public class TimeDealService {
 		String endPayload = String.format("{\"time_deal_id\": %d, \"new_status\": \"%s\"}",
 			timeDeal.getTimeDealId(), TimeDealStatus.ENDED.name());
 
-		// Create EventBridge Rules using UTC times
+		// 3. Create EventBridge Rules using UTC times
 		eventBridgeRuleService.createEventBridgeRule(
 			startRuleName,
 			startCron,
@@ -197,18 +181,6 @@ public class TimeDealService {
 	}
 
 
-	// private void sendTimeDealUpdateMessage(TimeDeal timeDeal) {
-	// 	// SQS 메시지 전송
-	// 	log.info("SQS 메시지를 전송 시작합니다.");
-	// 	SQSTimeDealDTO timeDealDTO = new SQSTimeDealDTO(timeDeal);
-	//
-	// 	// 메시지 타입 설정
-	// 	timeDealDTO.setMessageType(MessageType.USER_TIME_DEAL_CHANGE);
-	//
-	// 	sqsMessageSender.sendJsonMessage(timeDealDTO);
-	// 	log.info("SQS 메시지를 전송했습니다: {}", timeDeal);
-	// }
-
 	/**
 	 * 상품 상세 정보를 조회하는 메서드.
 	 *
@@ -221,10 +193,8 @@ public class TimeDealService {
 			.orElseThrow(() -> new RuntimeException("해당 상품에 대한 타임딜 정보를 찾을 수 없습니다."));
 
 		// 2. 상품 이미지 조회
-		List<String> productImages = productImageRepository.findByProduct_ProductId(productId)
-			.stream()
-			.map(ProductImage::getImageUrl)
-			.toList();
+		List<String> productImages = productImageService.findImageUrlsByProductId(productId);
+
 
 		// 3. DTO 생성 및 반환
 		return new ResDetailPageTimeDealDto(
@@ -232,7 +202,6 @@ public class TimeDealService {
 			timeDeal.getProduct().getProductId(),
 			//String.join(",", productImages),
 			String.join("", productImages.get(0)), // 단일 이미지로 설정. 나중에 여러 이미지 저장할때는 수정 필요
-			//timeDeal.getProduct().getTitle(),
 			removeHtmlTags(timeDeal.getProduct().getTitle()), // HTML 태그 제거
 			timeDeal.getProduct().getPrice(),
 			timeDeal.getDiscountPrice(),
@@ -241,8 +210,8 @@ public class TimeDealService {
 			timeDeal.getEndTime(),
 			timeDeal.getStatus().name(),
 			timeDeal.getStockQuantity(),
-			timeDeal.getProduct().getBrand(),         // 추가
-			timeDeal.getProduct().getMallName()       // 추가
+			timeDeal.getProduct().getBrand(),
+			timeDeal.getProduct().getMallName()
 		);
 	}
 
@@ -335,10 +304,10 @@ public class TimeDealService {
 	 * @return 구매 완료 메시지
 	 */
 	@Transactional
-	public ResPurchase testPurchaseTimeDeal(Long timeDealId, Long userId, int quantity) {
+	public ResPurchaseDto testPurchaseTimeDeal(Long timeDealId, Long userId, int quantity) {
 		// 유저 존재 여부 확인
-		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+		User user = userService.findById(userId);
+
 
 		// 타임딜 조회 시 비관적 락 사용
 		TimeDeal timeDeal = timeDealRepository.findByIdWithLock(timeDealId)

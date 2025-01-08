@@ -1,4 +1,4 @@
-package goorm.server.timedeal.config.aws;
+package goorm.server.timedeal.config.aws.dto;
 
 public class TimeDealMessage {
 	private Long time_deal_id;

@@ -14,6 +14,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -78,7 +79,7 @@ public class S3Service {
 		return "https://" + cloudFrontCname + "/" + fileName;
 	}
 
-	// Upload image from URL method
+	@Transactional
 	public String uploadImageFromUrlWithCloudFront(String imageUrl) throws IOException {
 		log.info("Uploading image from URL: " + imageUrl);
 

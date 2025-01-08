@@ -28,9 +28,6 @@ public class RedisSubscriber implements MessageListener {
 	private NotificationService notificationService; // WebSocket 전송 서비스
 
 	@Autowired
-	private SimpMessagingTemplate messagingTemplate; // WebSocket 전송
-
-	@Autowired
 	private RedissonClient redissonClient; // 분산 락을 위한 Redisson 클라이언트
 
 	@Override

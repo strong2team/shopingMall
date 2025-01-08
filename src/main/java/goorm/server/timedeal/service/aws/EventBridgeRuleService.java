@@ -2,7 +2,7 @@ package goorm.server.timedeal.service.aws;
 
 import java.time.LocalDateTime;
 
-
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +30,7 @@ public class EventBridgeRuleService {
 	 * @param inputPayload Lambda로 전달할 데이터 (JSON 문자열)
 	 * @param lambdaArn 연결할 Lambda의 ARN
 	 */
+	@Transactional
 	public void createEventBridgeRule(String ruleName, String scheduleExpression, String inputPayload, String lambdaArn) {
 		// Step 1: EventBridge Rule 생성
 		PutRuleRequest ruleRequest = PutRuleRequest.builder()

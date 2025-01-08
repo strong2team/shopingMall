@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-import goorm.server.timedeal.dto.ResPurchase;
+import goorm.server.timedeal.dto.ResPurchaseDto;
 import goorm.server.timedeal.model.Purchase;
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.User;
@@ -28,7 +28,7 @@ public class PurchaseService {
 	 * @return 구매 완료 메시지
 	 */
 	@Transactional
-	public ResPurchase createPurchaseRecord(TimeDeal timeDeal, User user, int quantity) {
+	public ResPurchaseDto createPurchaseRecord(TimeDeal timeDeal, User user, int quantity) {
 		Purchase purchase = new Purchase();
 		purchase.setTimeDeal(timeDeal);
 		purchase.setUser(user);
@@ -37,7 +37,7 @@ public class PurchaseService {
 		purchase.setStatus(PurchaseStatus.PURCHASED);
 		purchaseRepository.save(purchase);
 
-		return new ResPurchase(
+		return new ResPurchaseDto(
 			user.getUserId(),
 			quantity,
 			purchase.getPurchaseTime()

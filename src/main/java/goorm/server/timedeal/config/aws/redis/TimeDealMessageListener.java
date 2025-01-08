@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 public class TimeDealMessageListener implements MessageListener {
 
@@ -17,15 +20,13 @@ public class TimeDealMessageListener implements MessageListener {
 	@Override
 	public void onMessage(Message message, byte[] pattern) {
 		try {
-			System.out.println("Listener is triggered");
-			logger.info("Listener is triggered");
+			log.info("Listener is triggered");
 			String body = new String(message.getBody(), StandardCharsets.UTF_8);
 			TimeDealMessage timeDealMessage = objectMapper.readValue(body, TimeDealMessage.class);
-			System.out.println("Received message: " + timeDealMessage);
-			logger.info("Received message: {}", timeDealMessage);
+			log.info("Received message: {}", timeDealMessage);
 		} catch (Exception e) {
 			e.printStackTrace();
-			logger.error("Error processing message", e);
+			log.error("Error processing message", e);
 		}
 	}
 }
