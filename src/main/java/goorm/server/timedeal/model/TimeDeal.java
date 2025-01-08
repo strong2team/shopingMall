@@ -27,8 +27,6 @@ import lombok.Setter;
 
 
 @Entity
-//@Audited
-//@AuditTable(schema = "audit", value = "time_deal_audit")
 @Table(name = "time_deal")
 @Getter @Setter
 public class TimeDeal extends BaseEntity {
@@ -72,17 +70,4 @@ public class TimeDeal extends BaseEntity {
 
 	public TimeDeal() {
 	}
-
-	// @Override
-	// public String toString() {
-	// 	return "TimeDeal{" +
-	// 		"timeDealId=" + timeDealId +
-	// 		", product=" + (product != null ? product.getProductId() : "null") +
-	// 		", discountPrice=" + discountPrice +
-	// 		", stockQuantity=" + stockQuantity +
-	// 		", status=" + status +
-	// 		", startTime=" + startTime +
-	// 		", endTime=" + endTime +
-	// 		'}';
-	// }
 }

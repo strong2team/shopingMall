@@ -2,8 +2,6 @@ package goorm.server.timedeal.model;
 
 import java.time.LocalDateTime;
 
-import org.hibernate.envers.AuditTable;
-import org.hibernate.envers.Audited;
 
 import goorm.server.timedeal.model.enums.PurchaseStatus;
 import jakarta.persistence.Column;
@@ -24,8 +22,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-//@Audited
-//@AuditTable(schema = "audit", value = "purchase_audit")
 @Table(name = "purchase")
 public class Purchase extends BaseEntity {
 

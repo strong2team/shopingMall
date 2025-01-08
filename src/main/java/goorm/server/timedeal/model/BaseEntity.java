@@ -16,7 +16,6 @@ import lombok.Setter;
 
 @EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
-//@Audited
 @Getter
 @Setter
 @NoArgsConstructor
