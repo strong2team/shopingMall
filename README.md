@@ -50,6 +50,16 @@
 - **SQS/SNS**: 비동기 메시징 및 알림
 - **CloudFront**: 전역 CDN 서비스
 
+
+---
+
+## 🗃️ 데이터베이스 스키마
+아래는 본 프로젝트에서 사용된 데이터베이스 스키마 설계도입니다:
+
+<img width="800" alt="스크린샷 2025-01-09 오전 3 13 15" src="https://github.com/user-attachments/assets/55828a2c-7e3c-486e-91ed-be463861ffde" />
+
+
+
 ### CI/CD 파이프라인
 - **GitHub Actions**: 자동화된 테스트 및 배포
 - **ECR**: Docker 컨테이너 이미지 저장소
