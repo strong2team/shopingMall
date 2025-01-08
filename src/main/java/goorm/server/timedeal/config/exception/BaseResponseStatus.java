@@ -1,4 +1,4 @@
-package goorm.server.timedeal.config;
+package goorm.server.timedeal.config.exception;
 
 import lombok.Getter;
 

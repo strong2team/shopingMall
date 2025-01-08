@@ -1,4 +1,4 @@
-package goorm.server.timedeal.config;
+package goorm.server.timedeal.config.exception;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
