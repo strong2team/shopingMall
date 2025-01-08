@@ -106,8 +106,10 @@
         {
           "name": "DB_PROD_URL",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:DB_PROD_URL::"
-
-
+        },
+        {
+          "name": "NAVER_API_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:820242919524:secret:timdeal-env-GIq81O:NAVER_API_URL::"
         }
       ]
     }
