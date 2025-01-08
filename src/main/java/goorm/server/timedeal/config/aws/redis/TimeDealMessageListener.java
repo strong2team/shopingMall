@@ -1,4 +1,4 @@
-package goorm.server.timedeal.config.aws;
+package goorm.server.timedeal.config.aws.redis;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import goorm.server.timedeal.dto.TimeDealMessage;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

@@ -1,19 +1,17 @@
-package goorm.server.timedeal.config.aws;
+package goorm.server.timedeal.config.aws.redis;
 
 import java.util.concurrent.TimeUnit;
 
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import goorm.server.timedeal.dto.TimeDealMessage;
 import goorm.server.timedeal.model.enums.TimeDealStatus;
 import goorm.server.timedeal.service.NotificationService;
 import goorm.server.timedeal.service.TimeDealService;

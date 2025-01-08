@@ -30,10 +30,8 @@ public class AdminPageController {
 		// 타임딜 리스트 가져오기
 		List<ResTimeDealListDto> timeDeals = timeDealService.getTimeDealList();
 
-		// 모델에 타임딜 리스트 추가
 		model.addAttribute("timeDeals", timeDeals);
 
-		// 뷰 반환
 		return "deal_admin";
 	}
 }

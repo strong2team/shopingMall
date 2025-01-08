@@ -1,26 +1,4 @@
-package goorm.server.timedeal.config.aws;
-
-import java.time.Duration;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.converter.MessageConverter;
-import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory;
-import io.awspring.cloud.sqs.listener.acknowledgement.AcknowledgementOrdering;
-import io.awspring.cloud.sqs.listener.acknowledgement.handler.AcknowledgementMode;
-import io.awspring.cloud.sqs.operations.SqsTemplate;
-import io.awspring.cloud.sqs.support.converter.MessagingMessageConverter;
-import io.awspring.cloud.sqs.support.converter.SqsMessagingMessageConverter;
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+package goorm.server.timedeal.config.aws.sqs;
 
 // @Configuration
 // public class AwsSQSConfig {

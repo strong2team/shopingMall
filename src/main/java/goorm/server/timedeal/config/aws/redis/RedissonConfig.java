@@ -1,4 +1,4 @@
-package goorm.server.timedeal.config.aws;
+package goorm.server.timedeal.config.aws.redis;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;

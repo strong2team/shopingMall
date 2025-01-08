@@ -67,22 +67,14 @@ public class HomeController {
 				deal.getStockQuantity()
 			))
 			.collect(Collectors.toList());
-		//
-		// System.out.println("scheduledDeals.size() = " + scheduledDeals.size());
-		// System.out.println("scheduledDeals = " + scheduledDeals);
-		//
-		// System.out.println("activeDeals = " + activeDeals);
+
 
 		model.addAttribute("activeDeals", activeDeals);
 		model.addAttribute("scheduledDeals", scheduledDeals);
 
 		return "index";
 	}
-	//
-	// @GetMapping("/products/details")
-	// public String timeDealProductDetails(){
-	// 	return "deal_detail";
-	// }
+
 
 	@GetMapping("/sqs-test")
 	public String sqsTest() {

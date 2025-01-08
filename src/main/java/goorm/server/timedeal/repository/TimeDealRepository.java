@@ -7,15 +7,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.data.repository.query.Param;
 
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.enums.TimeDealStatus;
 import jakarta.persistence.LockModeType;
 
-public interface TimeDealRepository extends JpaRepository<TimeDeal, Long>,
-	RevisionRepository<TimeDeal, Long, Integer> {
+public interface TimeDealRepository extends JpaRepository<TimeDeal, Long> {
 
 	// ACTIVE 및 SCHEDULED 상태 타임딜 가져오기
 	@Query("SELECT t FROM TimeDeal t WHERE t.status = 'ACTIVE' OR t.status = 'SCHEDULED'")

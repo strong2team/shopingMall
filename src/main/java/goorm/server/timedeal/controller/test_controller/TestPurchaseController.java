@@ -1,4 +1,4 @@
-package goorm.server.timedeal.controller;
+package goorm.server.timedeal.controller.test_controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,15 +9,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import goorm.server.timedeal.config.BaseResponse;
-import goorm.server.timedeal.config.BaseResponseStatus;
-import goorm.server.timedeal.dto.ResPurchase;
+import goorm.server.timedeal.config.exception.BaseResponse;
+import goorm.server.timedeal.config.exception.BaseResponseStatus;
+import goorm.server.timedeal.dto.ResPurchaseDto;
 import goorm.server.timedeal.service.TimeDealService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-@RequestMapping("/test")
+@RequestMapping("/api/test")
 public class TestPurchaseController {
 
 	private final TimeDealService timeDealService;
@@ -35,15 +35,15 @@ public class TestPurchaseController {
 	 * @return 구매 성공 여부
 	 */
 	@PostMapping("/{dealId}/purchases")
-	public ResponseEntity<BaseResponse<ResPurchase>> testPurchaseTimeDeal(
+	public ResponseEntity<BaseResponse<ResPurchaseDto>> testPurchaseTimeDeal(
 		@PathVariable Long dealId,
 		@RequestParam Long userId,
 		@RequestParam int quantity) {
 
-		BaseResponse<ResPurchase> response;
+		BaseResponse<ResPurchaseDto> response;
 
 		try {
-			ResPurchase purchaseResponse = timeDealService.testPurchaseTimeDeal(dealId, userId, quantity);
+			ResPurchaseDto purchaseResponse = timeDealService.testPurchaseTimeDeal(dealId, userId, quantity);
 			response = new BaseResponse<>(BaseResponseStatus.SUCCESS, purchaseResponse);
 			return new ResponseEntity<>(response, HttpStatus.OK);
 		} catch (IllegalStateException e) {

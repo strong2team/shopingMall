@@ -11,7 +11,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry config) {
-		// SimpleBroker 경로를 /deals/status-updates로 설정
 		config.enableSimpleBroker("/deals/status-updates");
 		config.setApplicationDestinationPrefixes("/app");
 	}

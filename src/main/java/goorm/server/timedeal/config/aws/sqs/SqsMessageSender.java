@@ -1,19 +1,5 @@
-package goorm.server.timedeal.config.aws;
+package goorm.server.timedeal.config.aws.sqs;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.stereotype.Component;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import goorm.server.timedeal.dto.SQSTimeDealDTO;
-import goorm.server.timedeal.model.TimeDeal;
-import io.awspring.cloud.sqs.operations.SendResult;
-import io.awspring.cloud.sqs.operations.SqsTemplate;
-import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 //
 // @Component
 // public class SqsMessageSender {

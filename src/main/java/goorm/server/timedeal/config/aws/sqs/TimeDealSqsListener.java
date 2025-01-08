@@ -1,14 +1,4 @@
-package goorm.server.timedeal.config.aws;
-
-import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import goorm.server.timedeal.dto.SQSTimeDealDTO;
-import goorm.server.timedeal.service.NotificationService;
-import io.awspring.cloud.sqs.annotation.SqsListener;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+package goorm.server.timedeal.config.aws.sqs;
 
 // @Slf4j
 // @Component
