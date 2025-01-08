@@ -343,4 +343,21 @@ public class TimeDealService {
 		log.info("TimeDeal ID: {}, Remaining Stock: {}", timeDealId, remainingStock);
 		return remainingStock;
 	}
+
+	@Transactional
+	public TimeDeal updateTimeDealStock(Long dealId, int stockQuantity) {
+		// 타임딜 조회
+		TimeDeal timeDeal = timeDealRepository.findById(dealId)
+			.orElseThrow(() -> new IllegalArgumentException("해당 타임딜을 찾을 수 없습니다. ID: " + dealId));
+
+		// 수량 업데이트
+		if (stockQuantity < 0) {
+			throw new IllegalArgumentException("수량은 0 이상이어야 합니다.");
+		}
+		timeDeal.setStockQuantity(stockQuantity);
+
+		// 저장 및 반환
+		return timeDealRepository.save(timeDeal);
+	}
+
 }

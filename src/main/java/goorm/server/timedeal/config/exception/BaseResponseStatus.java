@@ -9,7 +9,10 @@ public enum BaseResponseStatus {
 	ERROR(false, 2000, "서버 오류가 발생했습니다."),
 	FORBIDDEN(false, 2003, "권한이 없는 유저의 접근입니다."),
 
-	STOCK_UNAVAILABLE(false, 2010, "재고가 부족합니다.");
+	STOCK_UNAVAILABLE(false, 2010, "재고가 부족합니다."),
+
+	INVALID_INPUT(false, 2011, "잘못된 입력입니다."),
+	TIME_DEAL_NOT_FOUND(false, 2012, "해당 타임딜을 찾을 수 없습니다.");
 
 
 	/*

@@ -23,6 +23,7 @@ import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.enums.UserRole;
 import goorm.server.timedeal.service.TimeDealService;
 import goorm.server.timedeal.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -159,6 +160,7 @@ public class TimeDealController {
 		}
 	}
 
+
 	@GetMapping("/deals/{timeDealId}")
 	public ResponseEntity<ResIndexPageTimeDealDto> getDealById(@PathVariable Long timeDealId) {
 		Optional<TimeDeal> timeDealOpt = timeDealService.findById(timeDealId);
@@ -183,5 +185,50 @@ public class TimeDealController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
 	}
+
+	/**
+	 * 특정 타임딜 ID의 수량을 변경하는 API
+	 *
+	 * @param dealId 수정할 타임딜의 고유 ID
+	 * @param stockQuantity 변경할 수량
+	 * @param userId 요청을 보낸 사용자의 ID (관리자 1로 임시 고정.)
+	 * @return 변경된 타임딜 정보를 포함한 응답
+	 */
+	@PatchMapping("/{dealId}/stocks")
+	public ResponseEntity<BaseResponse<TimeDeal>> updateTimeDealStock(
+		@PathVariable Long dealId, @RequestParam int stockQuantity) {
+		Long userId = 1L; //(관리자 1로 임시 고정.)
+
+		BaseResponse<TimeDeal> response;
+
+		try {
+			// 관리자 여부 확인
+			if (isAdminUser(userId)) {
+				// 타임딜 수량 변경
+				TimeDeal updatedTimeDeal = timeDealService.updateTimeDealStock(dealId, stockQuantity);
+
+				// 성공 응답 반환
+				response = new BaseResponse<>(BaseResponseStatus.SUCCESS, updatedTimeDeal);
+				return new ResponseEntity<>(response, HttpStatus.OK);
+			} else {
+				// 권한이 없는 경우
+				response = new BaseResponse<>(BaseResponseStatus.FORBIDDEN);
+				return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);  // 403 Forbidden
+			}
+		}  catch (IllegalArgumentException e) {
+			// 잘못된 입력 예외 처리
+			response = new BaseResponse<>(BaseResponseStatus.INVALID_INPUT);
+			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);  // 400 Bad Request
+		} catch (EntityNotFoundException e) {
+			// 존재하지 않는 타임딜 예외 처리
+			response = new BaseResponse<>(BaseResponseStatus.TIME_DEAL_NOT_FOUND);
+			return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);  // 404 Not Found
+		} catch (Exception e) {
+			// 기타 서버 오류 처리
+			response = new BaseResponse<>(BaseResponseStatus.ERROR);
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
 
 }
