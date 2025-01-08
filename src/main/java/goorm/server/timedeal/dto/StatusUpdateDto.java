@@ -1,3 +1,3 @@
 package goorm.server.timedeal.dto;
 
-public record StatusUpdateDTO(Long timeDealId, String status) {}
+public record StatusUpdateDto(Long timeDealId, String status) {}

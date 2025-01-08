@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import goorm.server.timedeal.config.BaseResponse;
-import goorm.server.timedeal.config.BaseResponseStatus;
+import goorm.server.timedeal.config.exception.BaseResponse;
+import goorm.server.timedeal.config.exception.BaseResponseStatus;
 
 /**
  * Product 조회 및 타임딜 등록
@@ -31,7 +31,8 @@ public class ProductSearchController {
 	@Value("${naver.client-secret}")
 	private String clientSecret;
 
-	private static final String NAVER_API_URL = "https://openapi.naver.com/v1/search/shop.json"; // 네이버 API URL
+	@Value("${naver.api-url}")
+	private String NAVER_API_URL;
 
 	/**
 	 * 상품을 검색하는 함수. (Naver Shopping API 사용)
@@ -73,7 +74,7 @@ public class ProductSearchController {
 		// 전체 검색 결과 수 확인
 		int totalResults = (int) body.getOrDefault("total", 0);
 
-		// totalResults를 10으로 나누어 총 페이지 수 계산
+		// totalResults 10으로 나누어 총 페이지 수 계산
 		int totalPages = (int) Math.ceil((double) totalResults / display);
 
 		// 페이지 번호가 총 페이지 수보다 크면 마지막 페이지로 조정
@@ -81,15 +82,14 @@ public class ProductSearchController {
 			page = totalPages;
 		}
 
-		// start 값 계산: 페이지 번호에 맞게 시작 인덱스를 계산
+		// 페이지 번호에 맞게 시작 인덱스를 계산
 		int start = (page - 1) * display + 1;
 
-		// start 값이 1000을 초과하지 않도록 제한
-		if (start > 1000) {
+		if (start > 1000) { // start 값이 1000을 초과하지 않도록 제한 (API 자체 제한)
 			start = 1000;
 		}
 
-		// API URL 재설정 (start 값 수정)
+		// API URL (start 값 수정)
 		apiUrl = NAVER_API_URL + "?query=" + query + "&display=" + display + "&start=" + start;
 
 		// API 호출
@@ -97,7 +97,6 @@ public class ProductSearchController {
 		body = response.getBody();
 		assert body != null;
 
-		// 결과값 구성
 		result.put("items", body.get("items"));
 		result.put("currentPage", page);
 		result.put("total", totalResults);

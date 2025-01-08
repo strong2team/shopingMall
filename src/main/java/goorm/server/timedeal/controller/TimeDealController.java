@@ -1,10 +1,6 @@
 package goorm.server.timedeal.controller;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,17 +11,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import goorm.server.timedeal.config.BaseResponse;
-import goorm.server.timedeal.config.BaseResponseStatus;
+import goorm.server.timedeal.config.exception.BaseResponse;
+import goorm.server.timedeal.config.exception.BaseResponseStatus;
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
 import goorm.server.timedeal.dto.ResIndexPageTimeDealDto;
-import goorm.server.timedeal.dto.UpdateReqTimeDeal;
+import goorm.server.timedeal.dto.ReqUpdateTimeDeal;
 import goorm.server.timedeal.model.TimeDeal;
-import goorm.server.timedeal.model.enums.TimeDealStatus;
 import goorm.server.timedeal.model.enums.UserRole;
 import goorm.server.timedeal.service.TimeDealService;
 import goorm.server.timedeal.service.UserService;
@@ -88,7 +82,7 @@ public class TimeDealController {
 	@PatchMapping("/{dealId}")
 	public ResponseEntity<BaseResponse<TimeDeal>> updateTimeDeal(
 		@PathVariable Long dealId,
-		@RequestBody UpdateReqTimeDeal timeDealUpdateRequest) {
+		@RequestBody ReqUpdateTimeDeal timeDealUpdateRequest) {
 
 		BaseResponse<TimeDeal> response;
 
