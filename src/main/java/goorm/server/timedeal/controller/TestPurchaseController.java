@@ -13,7 +13,9 @@ import goorm.server.timedeal.config.BaseResponse;
 import goorm.server.timedeal.config.BaseResponseStatus;
 import goorm.server.timedeal.dto.ResPurchase;
 import goorm.server.timedeal.service.TimeDealService;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/test")
 public class TestPurchaseController {
@@ -46,10 +48,13 @@ public class TestPurchaseController {
 			return new ResponseEntity<>(response, HttpStatus.OK);
 		} catch (IllegalStateException e) {
 			// 재고 부족 예외
+			log.error("Stock unavailable for dealId: {}, userId: {}, quantity: {}. Error: {}", dealId, userId, quantity, e.getMessage(), e);
 			response = new BaseResponse<>(BaseResponseStatus.STOCK_UNAVAILABLE);
 			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
 			// 기타 예외
+			log.error("Unexpected error occurred during purchase for dealId: {}, userId: {}, quantity: {}. Error: {}", dealId, userId, quantity, e.getMessage(), e);
+
 			response = new BaseResponse<>(BaseResponseStatus.ERROR);
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
