@@ -10,7 +10,31 @@
   <link rel="stylesheet" href="/css/deal_admin.css">
 
   <style>
+    .modal {
+      display: none; /* 기본적으로 숨김 */
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
 
+    .modal-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 300px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>
@@ -49,13 +73,13 @@
       </tr>
       </thead>
       <tbody>
-      <tr th:each="deal : ${timeDeals}">
+      <tr th:each="deal : ${timeDeals}" th:attr="data-deal-id=${deal.timeDealId}">
         <td th:text="${deal.productName}">상품명</td>
         <td th:text="${deal.startTime + ' ~ ' + deal.endTime}">기간</td>
-        <td th:text="${deal.stockQuantity}">재고</td>
+        <td th:text="${deal.stockQuantity}" data-stock="${deal.stockQuantity}">재고</td>
         <td th:text="${deal.discountRate}">할인율</td>
         <td th:text="${deal.discountPrice}">할인 후 가격</td>
-        <td th:text="${deal.status}">상태</td> <!-- 상태 표시 -->
+        <td th:text="${deal.status}">상태</td>
         <td>
           <button class="edit-btn">수정</button>
           <button class="delete-btn">삭제</button>
@@ -127,6 +151,23 @@
     </div>
   </div>
 </div>
+<!-- 수량 수정 모달 -->
+<div id="stockEditModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>재고 수정</h2>
+      <span class="modal-close" onclick="closeStockEditModal()">&times;</span>
+    </div>
+    <div class="form-group">
+      <label for="editStock">재고 수량</label>
+      <input type="number" id="editStock" placeholder="변경할 재고 수량" min="0">
+    </div>
+    <div class="modal-actions">
+      <button class="save-btn" onclick="saveStock()">저장</button>
+      <button class="cancel-btn" onclick="closeStockEditModal()">취소</button>
+    </div>
+  </div>
+</div>
 
 <script>
   // 토글 버튼 기능
@@ -145,11 +186,11 @@
   });
 
   // 수정 및 삭제 버튼 클릭 이벤트
-  document.querySelectorAll(".edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      alert("수정 기능은 아직 구현되지 않았습니다.");
-    });
-  });
+  // document.querySelectorAll(".edit-btn").forEach(btn => {
+  //   btn.addEventListener("click", () => {
+  //     alert("수정 기능은 아직 구현되지 않았습니다.");
+  //   });
+  // });
 
   document.querySelectorAll(".delete-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -431,6 +472,69 @@
     currentPage = 1;
     searchProducts();
   });
+
+
+
+
+
+
+  let currentDealId = null; // 현재 수정 중인 타임딜 ID 저장
+
+  // 모달 열기
+  function openStockEditModal(dealId, currentStock) {
+    currentDealId = dealId; // 수정할 타임딜 ID 저장
+    document.getElementById("editStock").value = currentStock; // 기존 재고 수량 표시
+    document.getElementById("stockEditModal").style.display = "flex";
+  }
+
+  // 모달 닫기
+  function closeStockEditModal() {
+    currentDealId = null; // 초기화
+    document.getElementById("stockEditModal").style.display = "none";
+  }
+
+  // 서버로 수량 수정 요청 보내기
+  async function saveStock() {
+    const newStock = document.getElementById("editStock").value;
+
+    if (!currentDealId || newStock < 0) {
+      alert("올바른 재고 수량을 입력하세요.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/time-deals/${currentDealId}/stocks?stockQuantity=${newStock}`, {
+        method: "PATCH",
+      });
+
+      const result = await response.json();
+
+      if (result.isSuccess && result.code === 1000) {
+        alert("재고가 성공적으로 수정되었습니다!");
+        // 필요 시 UI 업데이트
+        location.reload(); // 페이지 새로고침
+      } else {
+        alert(`수정 실패: ${result.message || "알 수 없는 오류"}`);
+      }
+    } catch (error) {
+      console.error("수량 수정 중 오류:", error);
+      alert("서버와의 통신에 문제가 발생했습니다.");
+    }
+
+    closeStockEditModal(); // 모달 닫기
+  }
+  document.querySelectorAll(".edit-btn").forEach((btn, index) => {
+    btn.addEventListener("click", (event) => {
+      const dealRow = event.target.closest("tr");
+      const dealId = dealRow.getAttribute("data-deal-id"); // 데이터 속성에서 ID 가져오기
+      const currentStock = dealRow.querySelector("[data-stock]").innerText; // 현재 재고 가져오기
+
+      openStockEditModal(dealId, currentStock); // 모달 열기
+    });
+  });
+
+
+
 </script>
 
 
