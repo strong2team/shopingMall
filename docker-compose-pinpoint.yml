@@ -13,52 +13,25 @@ services:
       retries: 10
       start_period: 5s
     networks:
-      - app-network
+      - pinpoint-docker_pinpoint
 
   app:
     container_name: spring-boot-app
     build:
       context: .
-      dockerfile: Dockerfile
-    env_file: 
+      dockerfile: Dockerfile-pinpoint
+    env_file:
       - .env
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - REDIS_HOST=redis  # Docker Compose 내에서 Redis 컨테이너 이름으로 설정
-      - REDIS_PORT=6379   # Redis 기본 포트
-      - PINPOINT_ENABLE=true  # Pinpoint 에이전트 활성화 여부 (true/false)
-    volumes:
-      - ./pinpoint-agent-2.5.4/pinpoint-bootstrap.jar:/pinpoint-bootstrap.jar  # Pinpoint Agent JAR 파일 마운트
-    command: >
-      sh -c "
-      if [ \"$PINPOINT_ENABLE\" = \"true\" ]; then
-        java
-        -javaagent:/pinpoint-bootstrap.jar
-        -Dpinpoint.agentId=my-agent
-        -Dpinpoint.applicationName=my-spring-boot-app
-        -Dprofiler.collector.ip=172.24.0.30
-        -Dprofiler.collector.tcp.port=9994
-        -Dprofiler.collector.stat.port=9995
-        -Dprofiler.collector.span.port=9996
-        -Dspring.data.redis.host=localhost
-        -Dspring.data.redis.port=6379
-        -Dprofiler.sampling.counting.sampling-rate=1
-        -jar /app.jar --spring.profiles.active=dev;
-      else
-        java -jar /app.jar --spring.profiles.active=dev;
-      fi
-      "
+      - PINPOINT_ENABLE=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     ports:
       - "8080:8080"
-    depends_on:
-      redis:
-        condition: service_healthy
     networks:
-      - app-network
       - pinpoint-docker_pinpoint
 
 networks:
-  app-network:
-    driver: bridge
   pinpoint-docker_pinpoint:
-    external: true  # Pinpoint 네트워크를 외부화
+    external: true

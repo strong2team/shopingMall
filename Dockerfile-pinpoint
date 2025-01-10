@@ -1,0 +1,55 @@
+# =========================
+# (1) Build stage
+# =========================
+FROM openjdk:17-jdk-bullseye AS builder
+
+# 필요한 패키지 설치
+RUN apt-get update && apt-get install -y findutils
+
+WORKDIR /app
+
+# 프로젝트 전체 복사
+COPY . .
+
+# Gradle 빌드 (테스트 스킵)
+RUN ./gradlew clean build -x test
+
+
+# =========================
+# (2) Run stage
+# =========================
+FROM openjdk:17-jdk-slim
+
+WORKDIR /app
+
+# 빌드 산출물 복사
+COPY --from=builder /app/build/libs/*.jar app.jar
+
+# Pinpoint Agent 폴더 복사
+COPY pinpoint-agent-2.5.4 /pinpoint-agent-2.5.4
+
+# 기본 환경변수 (필요에 따라 변경)
+ENV SPRING_PROFILES_ACTIVE=dev
+ENV PINPOINT_ENABLE=true
+
+# CMD에서 PINPOINT_ENABLE 체크 후, Pinpoint 붙여 실행
+CMD ["sh", "-c", "\
+    if [ \"$PINPOINT_ENABLE\" = \"true\" ]; then \
+    echo 'Starting application with Pinpoint agent (Thrift mode)...'; \
+    exec java \
+    -javaagent:/pinpoint-agent-2.5.4/pinpoint-bootstrap.jar \
+    -Dpinpoint.agentId=my-agent \
+    -Dpinpoint.applicationName=my-spring-boot-app \
+    -Dprofiler.transport.module=THRIFT \
+    -Dprofiler.collector.ip=172.24.0.30 \
+    -Dprofiler.collector.tcp.port=9994 \
+    -Dprofiler.collector.stat.port=9995 \
+    -Dprofiler.collector.span.port=9996 \
+    -jar /app/app.jar --spring.profiles.active=$SPRING_PROFILES_ACTIVE; \
+    else \
+    echo 'Starting application without Pinpoint agent...'; \
+    exec java -jar /app/app.jar --spring.profiles.active=$SPRING_PROFILES_ACTIVE; \
+    fi"]
+
+# 컨테이너 포트 노출
+EXPOSE 8080
