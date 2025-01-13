@@ -12,11 +12,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import goorm.server.timedeal.config.aws.sqs.SqsMessageSender;
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
 import goorm.server.timedeal.dto.ResPurchaseDto;
 import goorm.server.timedeal.dto.ResTimeDealListDto;
 import goorm.server.timedeal.dto.ReqUpdateTimeDeal;
+import goorm.server.timedeal.dto.SQSTimeDealDTO;
 import goorm.server.timedeal.model.Product;
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.User;
@@ -53,6 +55,7 @@ public class TimeDealService {
 
 	private final RedissonClient redissonClient;  // RedissonClient 주입
 	private final StringRedisTemplate redisTemplate;  // Redis 캐시 주입
+	private final SqsMessageSender sqsMessageSender;
 
 
 	/**
@@ -82,10 +85,29 @@ public class TimeDealService {
 		// 5. 타임딜 예약 생성
 		TimeDeal timeDeal = saveTimeDeal(timeDealRequest, product, user);
 
-		// 6. EventBridge Rule 생성
+		// 6. Redis에 재고 캐싱 추가
+		cacheTimeDealStockInRedis(timeDeal);
+
+		// 7. EventBridge Rule 생성
 		createEventBridgeRulesForTimeDeal(timeDeal);
 
+		// // 6. EventBridge Rule 생성
+		// createEventBridgeRulesForTimeDeal(timeDeal);
+
 		return timeDeal;
+	}
+
+	/**
+	 * Redis에 타임딜 재고 정보를 캐싱하는 메서드
+	 */
+	private void cacheTimeDealStockInRedis(TimeDeal timeDeal) {
+		String stockKey = "time_deal:stock:" + timeDeal.getTimeDealId();  // Redis Key
+		int stockQuantity = timeDeal.getStockQuantity();           // 재고 수량
+
+		// Redis에 재고 정보 저장
+		redisTemplate.opsForValue().set(stockKey, String.valueOf(stockQuantity));
+
+		log.info("Redis에 타임딜 재고 캐싱 완료 - Key: {}, Stock: {}", stockKey, stockQuantity);
 	}
 
 	private TimeDeal saveTimeDeal(ReqTimeDeal timeDealRequest, Product product, User user) {
@@ -409,18 +431,23 @@ public class TimeDealService {
 			redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity));
 
 			// DB 업데이트
-			TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
-				.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
-			timeDeal.setStockQuantity(currentStockQuantity);
-			timeDealRepository.save(timeDeal);
+			// TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
+			// 	.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+			// timeDeal.setStockQuantity(currentStockQuantity);
+			// timeDealRepository.save(timeDeal);
 
 			// 구매 기록 생성 및 반환
-			return purchaseService.createPurchaseRecord(timeDeal, user, quantity);
+			// return purchaseService.createPurchaseRecord(timeDeal, user, quantity);
+
+			// SQS로 메시지 전송
+			SQSTimeDealDTO sqsMessage = new SQSTimeDealDTO(timeDealId, userId, quantity, "PURCHASED");
+			sqsMessageSender.sendJsonMessage(sqsMessage);
+			//아래 날짜로직 나중에 수정. 임시로 현재로 설정하기...!
+			return new ResPurchaseDto(userId, quantity, LocalDateTime.now(),"PURCHASED");
+
 		} finally {
 			lock.unlock(); // 락 해제
 		}
 	}
-
-
 
 }
