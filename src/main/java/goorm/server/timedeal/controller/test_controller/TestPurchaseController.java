@@ -59,5 +59,39 @@ public class TestPurchaseController {
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+
+
+	/**
+	 * 테스트용 타임딜 구매 API
+	 * @param dealId 구매할 타임딜 ID
+	 * @param userId 구매할 유저 ID
+	 * @param quantity 구매  수량
+	 * @return 구매 성공 여부
+	 */
+	@PostMapping("/{dealId}/purchases/redis")
+	public ResponseEntity<BaseResponse<ResPurchaseDto>> testPurchaseTimeDealByRedis(
+		@PathVariable Long dealId,
+		@RequestParam Long userId,
+		@RequestParam int quantity) {
+
+		BaseResponse<ResPurchaseDto> response;
+
+		try {
+			ResPurchaseDto purchaseResponse = timeDealService.testPurchaseTimeDealByRedis(dealId, userId, quantity);
+			response = new BaseResponse<>(BaseResponseStatus.SUCCESS, purchaseResponse);
+			return new ResponseEntity<>(response, HttpStatus.OK);
+		} catch (IllegalStateException e) {
+			// 재고 부족 예외
+			log.error("Stock unavailable for dealId: {}, userId: {}, quantity: {}. Error: {}", dealId, userId, quantity, e.getMessage(), e);
+			response = new BaseResponse<>(BaseResponseStatus.STOCK_UNAVAILABLE);
+			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			// 기타 예외
+			log.error("Unexpected error occurred during purchase for dealId: {}, userId: {}, quantity: {}. Error: {}", dealId, userId, quantity, e.getMessage(), e);
+
+			response = new BaseResponse<>(BaseResponseStatus.ERROR);
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }
 
