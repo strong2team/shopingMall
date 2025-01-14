@@ -25,7 +25,7 @@ spring:
           revision_field_name: rev_id  # revision 필드 이름
           revision_type_field_name: rev_type  # revision 타입 필드 이름
           store_data_at_delete: true  # 삭제된 엔티티에 대한 정보도 기록
-    enable-sql-logging: true  # SQL 로그를 활성화하여, 쿼리 확인
+    enable-sql-logging: true  # SQL 로그를 활성화하여서, 쿼리 확인
 naver:
   client-id: ${NAVER_CLIENT_ID}
   client-secret: ${NAVER_CLIENT_SECRET}
