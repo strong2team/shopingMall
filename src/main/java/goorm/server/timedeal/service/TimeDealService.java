@@ -6,14 +6,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import goorm.server.timedeal.config.aws.sqs.SqsMessageSender;
 import goorm.server.timedeal.dto.ReqTimeDeal;
 import goorm.server.timedeal.dto.ResDetailPageTimeDealDto;
 import goorm.server.timedeal.dto.ResPurchaseDto;
 import goorm.server.timedeal.dto.ResTimeDealListDto;
 import goorm.server.timedeal.dto.ReqUpdateTimeDeal;
+import goorm.server.timedeal.dto.SQSTimeDealDTO;
 import goorm.server.timedeal.model.Product;
 import goorm.server.timedeal.model.TimeDeal;
 import goorm.server.timedeal.model.User;
@@ -48,6 +53,11 @@ public class TimeDealService {
 	private String timeDealUpdateLambdaArn;
 
 
+	private final RedissonClient redissonClient;  // RedissonClient 주입
+	private final StringRedisTemplate redisTemplate;  // Redis 캐시 주입
+	private final SqsMessageSender sqsMessageSender;
+
+
 	/**
 	 * 타임딜을 생성하는 메서드.
 	 *
@@ -75,10 +85,29 @@ public class TimeDealService {
 		// 5. 타임딜 예약 생성
 		TimeDeal timeDeal = saveTimeDeal(timeDealRequest, product, user);
 
-		// 6. EventBridge Rule 생성
+		// 6. Redis에 재고 캐싱 추가
+		cacheTimeDealStockInRedis(timeDeal);
+
+		// 7. EventBridge Rule 생성
 		createEventBridgeRulesForTimeDeal(timeDeal);
 
+		// // 6. EventBridge Rule 생성
+		// createEventBridgeRulesForTimeDeal(timeDeal);
+
 		return timeDeal;
+	}
+
+	/**
+	 * Redis에 타임딜 재고 정보를 캐싱하는 메서드
+	 */
+	private void cacheTimeDealStockInRedis(TimeDeal timeDeal) {
+		String stockKey = "time_deal:stock:" + timeDeal.getTimeDealId();  // Redis Key
+		int stockQuantity = timeDeal.getStockQuantity();           // 재고 수량
+
+		// Redis에 재고 정보 저장
+		redisTemplate.opsForValue().set(stockKey, String.valueOf(stockQuantity));
+
+		log.info("Redis에 타임딜 재고 캐싱 완료 - Key: {}, Stock: {}", stockKey, stockQuantity);
 	}
 
 	private TimeDeal saveTimeDeal(ReqTimeDeal timeDealRequest, Product product, User user) {
@@ -358,6 +387,67 @@ public class TimeDealService {
 
 		// 저장 및 반환
 		return timeDealRepository.save(timeDeal);
+	}
+
+
+
+
+
+
+
+	//
+	@Transactional
+	public ResPurchaseDto testPurchaseTimeDealByRedis(Long timeDealId, Long userId, int quantity) {
+		// 유저 확인
+		User user = userService.findById(userId);
+
+		// Redis 락을 통한 동시성 제어
+		RLock lock = redissonClient.getLock("deal-lock:" + timeDealId); // 고유한 락 키 설정
+		lock.lock(); // 락을 얻음
+
+		try {
+			// Redis에서 재고 수량 조회
+			String stockKey = "time_deal:stock:" + timeDealId;
+			String stockQuantityStr = redisTemplate.opsForValue().get(stockKey);
+
+			int currentStockQuantity = (stockQuantityStr != null) ? Integer.parseInt(stockQuantityStr) : 0;
+
+			// 캐시된 재고 수량이 DB와 다를 수 있으므로 DB를 한번 조회해 갱신
+			if (currentStockQuantity == 0) {
+				TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
+					.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+				currentStockQuantity = timeDeal.getStockQuantity();
+				// Redis 캐시 갱신
+				redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity));
+			}
+
+			// 재고 확인
+			if (currentStockQuantity < quantity) {
+				throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + currentStockQuantity + "개");
+			}
+
+			// 재고 감소 및 Redis 업데이트
+			currentStockQuantity -= quantity;
+			redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity));
+
+			// DB 업데이트
+			// TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
+			// 	.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+			// timeDeal.setStockQuantity(currentStockQuantity);
+			// timeDealRepository.save(timeDeal);
+
+			// 구매 기록 생성 및 반환
+			// return purchaseService.createPurchaseRecord(timeDeal, user, quantity);
+
+			// SQS로 메시지 전송
+			SQSTimeDealDTO sqsMessage = new SQSTimeDealDTO(timeDealId, userId, quantity, "PURCHASED");
+			sqsMessageSender.sendJsonMessage(sqsMessage);
+			//아래 날짜로직 나중에 수정. 임시로 현재로 설정하기...!
+			return new ResPurchaseDto(userId, quantity, LocalDateTime.now(),"PURCHASED");
+
+		} finally {
+			lock.unlock(); // 락 해제
+		}
 	}
 
 }

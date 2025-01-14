@@ -40,7 +40,8 @@ public class PurchaseService {
 		return new ResPurchaseDto(
 			user.getUserId(),
 			quantity,
-			purchase.getPurchaseTime()
+			purchase.getPurchaseTime(),
+			"PURCHASED"
 		);
 	}
 }
