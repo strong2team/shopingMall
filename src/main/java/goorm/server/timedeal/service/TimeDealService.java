@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.redisson.api.RLock;
@@ -395,59 +396,126 @@ public class TimeDealService {
 
 
 
+
+	// @Transactional
+	// public ResPurchaseDto testPurchaseTimeDealByRedis(Long timeDealId, Long userId, int quantity) {
 	//
+	// 	// 유저 확인
+	// 	User user = userService.findById(userId);
+	//
+	// 	// Redis 락을 통한 동시성 제어
+	// 	RLock lock = redissonClient.getLock("deal-lock:" + timeDealId); // 고유한 락 키 설정
+	// 	lock.lock(); // 락을 얻음
+	//
+	// 	try {
+	// 		// Redis에서 재고 수량 조회
+	// 		String stockKey = "time_deal:stock:" + timeDealId;
+	// 		String stockQuantityStr = redisTemplate.opsForValue().get(stockKey);
+	//
+	// 		int currentStockQuantity = (stockQuantityStr != null) ? Integer.parseInt(stockQuantityStr) : 0;
+	//
+	// 		// 캐시된 재고 수량이 DB와 다를 수 있으므로 DB를 한번 조회해 갱신
+	// 		if (currentStockQuantity == 0) {
+	// 			TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
+	// 				.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+	// 			currentStockQuantity = timeDeal.getStockQuantity();
+	// 			// Redis 캐시 갱신
+	// 			redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity));
+	// 		}
+	//
+	// 		// 재고 확인
+	// 		if (currentStockQuantity < quantity) {
+	// 			throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + currentStockQuantity + "개");
+	// 		}
+	//
+	// 		// 재고 감소 및 Redis 업데이트
+	// 		currentStockQuantity -= quantity;
+	// 		redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity));
+	//
+	// 		// DB 업데이트
+	// 		// TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
+	// 		// 	.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+	// 		// timeDeal.setStockQuantity(currentStockQuantity);
+	// 		// timeDealRepository.save(timeDeal);
+	//
+	// 		// 구매 기록 생성 및 반환
+	// 		// return purchaseService.createPurchaseRecord(timeDeal, user, quantity);
+	//
+	// 		// SQS로 메시지 전송
+	// 		SQSTimeDealDTO sqsMessage = new SQSTimeDealDTO(timeDealId, userId, quantity, "PURCHASED");
+	// 		sqsMessageSender.sendJsonMessage(sqsMessage);
+	// 		//아래 날짜로직 나중에 수정. 임시로 현재로 설정하기...!
+	// 		return new ResPurchaseDto(userId, quantity, LocalDateTime.now(),"PURCHASED");
+	//
+	// 	} finally {
+	// 		lock.unlock(); // 락 해제
+	// 	}
+	// }
+
 	@Transactional
 	public ResPurchaseDto testPurchaseTimeDealByRedis(Long timeDealId, Long userId, int quantity) {
+		// 시작 시간 측정
+		long startTime = System.nanoTime();
+
 		// 유저 확인
-		User user = userService.findById(userId);
+		long userLookupStartTime = System.nanoTime();
+		//User user = userService.findById(userId);  // 실제 유저 조회 로직
+		long userLookupEndTime = System.nanoTime();
+		log.info("User lookup time: " + (userLookupEndTime - userLookupStartTime) + " ns");
 
 		// Redis 락을 통한 동시성 제어
+		long lockStartTime = System.nanoTime();
 		RLock lock = redissonClient.getLock("deal-lock:" + timeDealId); // 고유한 락 키 설정
 		lock.lock(); // 락을 얻음
+		long lockEndTime = System.nanoTime();
+		log.info("Lock acquisition time: " + (lockEndTime - lockStartTime) + " ns");
 
 		try {
 			// Redis에서 재고 수량 조회
 			String stockKey = "time_deal:stock:" + timeDealId;
 			String stockQuantityStr = redisTemplate.opsForValue().get(stockKey);
 
+			// 재고 수량 체크
+			long redisQueryStartTime = System.nanoTime();
 			int currentStockQuantity = (stockQuantityStr != null) ? Integer.parseInt(stockQuantityStr) : 0;
+			long redisQueryEndTime = System.nanoTime();
+			log.info("Redis query time: " + (redisQueryEndTime - redisQueryStartTime) + " ns");
 
-			// 캐시된 재고 수량이 DB와 다를 수 있으므로 DB를 한번 조회해 갱신
-			if (currentStockQuantity == 0) {
-				TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
-					.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
-				currentStockQuantity = timeDeal.getStockQuantity();
-				// Redis 캐시 갱신
-				redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity));
-			}
+			// 재고가 충분한 경우에만 구매 처리
+			if (currentStockQuantity >= quantity) {
+				// 재고 감소
+				long stockUpdateStartTime = System.nanoTime();
+				redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity - quantity)); // 재고 감소
+				long stockUpdateEndTime = System.nanoTime();
+				log.info("Stock update time: " + (stockUpdateEndTime - stockUpdateStartTime) + " ns");
 
-			// 재고 확인
-			if (currentStockQuantity < quantity) {
+				// SQS FIFO 큐로 구매 요청 메시지 전송
+				long sqsStartTime = System.nanoTime();
+				sendMessageToSQS(timeDealId, userId, quantity);  // 실제 SQS 메시지 전송 메소드
+				long sqsEndTime = System.nanoTime();
+				log.info("SQS message send time: " + (sqsEndTime - sqsStartTime) + " ns");
+
+				// 응답 반환
+				return new ResPurchaseDto(userId, quantity, LocalDateTime.now(),"PURCHASED");
+			} else {
+				// 재고가 부족한 경우
 				throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + currentStockQuantity + "개");
+
 			}
-
-			// 재고 감소 및 Redis 업데이트
-			currentStockQuantity -= quantity;
-			redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity));
-
-			// DB 업데이트
-			// TimeDeal timeDeal = timeDealRepository.findById(timeDealId)
-			// 	.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
-			// timeDeal.setStockQuantity(currentStockQuantity);
-			// timeDealRepository.save(timeDeal);
-
-			// 구매 기록 생성 및 반환
-			// return purchaseService.createPurchaseRecord(timeDeal, user, quantity);
-
-			// SQS로 메시지 전송
-			SQSTimeDealDTO sqsMessage = new SQSTimeDealDTO(timeDealId, userId, quantity, "PURCHASED");
-			sqsMessageSender.sendJsonMessage(sqsMessage);
-			//아래 날짜로직 나중에 수정. 임시로 현재로 설정하기...!
-			return new ResPurchaseDto(userId, quantity, LocalDateTime.now(),"PURCHASED");
 
 		} finally {
-			lock.unlock(); // 락 해제
+			// 락 해제
+			long lockReleaseStartTime = System.nanoTime();
+			lock.unlock();  // 락을 해제
+			long lockReleaseEndTime = System.nanoTime();
+			log.info("Lock release time: " + (lockReleaseEndTime - lockReleaseStartTime) + " ns");
 		}
+	}
+
+
+	private void sendMessageToSQS(Long timeDealId, Long userId, int quantity) {
+		SQSTimeDealDTO sqsMessage = new SQSTimeDealDTO(timeDealId, userId, quantity, "PURCHASED");
+		sqsMessageSender.sendJsonMessage(sqsMessage);
 	}
 
 }
