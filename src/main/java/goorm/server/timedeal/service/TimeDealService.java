@@ -11,6 +11,8 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import goorm.server.timedeal.config.aws.sqs.SqsMessageSender;
@@ -35,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+@EnableAsync
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -458,8 +461,80 @@ public class TimeDealService {
 	// 	}
 	// }
 
+	// @Transactional
+	// public ResPurchaseDto testPurchaseTimeDealByRedis(Long timeDealId, Long userId, int quantity) {
+	// 	// 시작 시간 측정
+	// 	long startTime = System.nanoTime();
+	//
+	// 	// 유저 확인
+	// 	long userLookupStartTime = System.nanoTime();
+	// 	//User user = userService.findById(userId);  // 실제 유저 조회 로직
+	// 	long userLookupEndTime = System.nanoTime();
+	// 	log.info("User lookup time: " + (userLookupEndTime - userLookupStartTime) + " ns");
+	//
+	// 	// Redis 락을 통한 동시성 제어
+	// 	long lockStartTime = System.nanoTime();
+	// 	RLock lock = redissonClient.getLock("deal-lock:" + timeDealId); // 고유한 락 키 설정
+	// 	lock.lock(); // 락을 얻음
+	// 	long lockEndTime = System.nanoTime();
+	// 	log.info("Lock acquisition time: " + (lockEndTime - lockStartTime) + " ns");
+	//
+	// 	try {
+	// 		// Redis에서 재고 수량 조회
+	// 		String stockKey = "time_deal:stock:" + timeDealId;
+	// 		String stockQuantityStr = redisTemplate.opsForValue().get(stockKey);
+	//
+	// 		// 재고 수량 체크
+	// 		long redisQueryStartTime = System.nanoTime();
+	// 		int currentStockQuantity = (stockQuantityStr != null) ? Integer.parseInt(stockQuantityStr) : 0;
+	// 		long redisQueryEndTime = System.nanoTime();
+	// 		log.info("Redis query time: " + (redisQueryEndTime - redisQueryStartTime) + " ns");
+	//
+	// 		// 재고가 충분한 경우에만 구매 처리
+	// 		if (currentStockQuantity >= quantity) {
+	// 			// 재고 감소
+	// 			long stockUpdateStartTime = System.nanoTime();
+	// 			redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity - quantity)); // 재고 감소
+	// 			long stockUpdateEndTime = System.nanoTime();
+	// 			log.info("Stock update time: " + (stockUpdateEndTime - stockUpdateStartTime) + " ns");
+	//
+	// 			// SQS FIFO 큐로 구매 요청 메시지 전송
+	// 			long sqsStartTime = System.nanoTime();
+	// 			sendMessageToSQS(timeDealId, userId, quantity);  // 실제 SQS 메시지 전송 메소드
+	// 			long sqsEndTime = System.nanoTime();
+	// 			log.info("SQS message send time: " + (sqsEndTime - sqsStartTime) + " ns");
+	//
+	// 			// 응답 반환
+	// 			return new ResPurchaseDto(userId, quantity, LocalDateTime.now(),"PURCHASED");
+	// 		} else {
+	// 			// 재고가 부족한 경우
+	// 			throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + currentStockQuantity + "개");
+	//
+	// 		}
+	//
+	// 	} finally {
+	// 		// 락 해제
+	// 		long lockReleaseStartTime = System.nanoTime();
+	// 		lock.unlock();  // 락을 해제
+	// 		long lockReleaseEndTime = System.nanoTime();
+	// 		log.info("Lock release time: " + (lockReleaseEndTime - lockReleaseStartTime) + " ns");
+	// 	}
+	// }
+	//
+	//
+	// private void sendMessageToSQS(Long timeDealId, Long userId, int quantity) {
+	// 	SQSTimeDealDTO sqsMessage = new SQSTimeDealDTO(timeDealId, userId, quantity, "PURCHASED");
+	// 	sqsMessageSender.sendJsonMessage(sqsMessage);
+	// }
+
+
+
+
+
+
 	@Transactional
 	public ResPurchaseDto testPurchaseTimeDealByRedis(Long timeDealId, Long userId, int quantity) {
+		boolean flag=false;
 		// 시작 시간 측정
 		long startTime = System.nanoTime();
 
@@ -495,18 +570,19 @@ public class TimeDealService {
 				long stockUpdateEndTime = System.nanoTime();
 				log.info("Stock update time: " + (stockUpdateEndTime - stockUpdateStartTime) + " ns");
 
-				// SQS FIFO 큐로 구매 요청 메시지 전송
-				long sqsStartTime = System.nanoTime();
-				sendMessageToSQS(timeDealId, userId, quantity);  // 실제 SQS 메시지 전송 메소드
-				long sqsEndTime = System.nanoTime();
-				log.info("SQS message send time: " + (sqsEndTime - sqsStartTime) + " ns");
+				// SQS 메시지 전송은 비동기 처리
+				// long sqsStartTime = System.nanoTime();
+				// sendMessageToSQS(timeDealId, userId, quantity);  // 비동기 처리로 변경
+				// long sqsEndTime = System.nanoTime();
+				// log.info("SQS message send initiation time: " + (sqsEndTime - sqsStartTime) + " ns");
+
+				flag=true;
 
 				// 응답 반환
 				return new ResPurchaseDto(userId, quantity, LocalDateTime.now(),"PURCHASED");
 			} else {
 				// 재고가 부족한 경우
 				throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + currentStockQuantity + "개");
-
 			}
 
 		} finally {
@@ -515,13 +591,65 @@ public class TimeDealService {
 			lock.unlock();  // 락을 해제
 			long lockReleaseEndTime = System.nanoTime();
 			log.info("Lock release time: " + (lockReleaseEndTime - lockReleaseStartTime) + " ns");
+
+			if(flag){
+				long sqsStartTime = System.nanoTime();
+				sendMessageToSQS(timeDealId, userId, quantity);  // 비동기 처리로 변경
+				long sqsEndTime = System.nanoTime();
+				log.info("SQS message send initiation time: " + (sqsEndTime - sqsStartTime) + " ns");
+			}
 		}
 	}
 
-
-	private void sendMessageToSQS(Long timeDealId, Long userId, int quantity) {
+	@Async
+	public void sendMessageToSQS(Long timeDealId, Long userId, int quantity) {
 		SQSTimeDealDTO sqsMessage = new SQSTimeDealDTO(timeDealId, userId, quantity, "PURCHASED");
-		sqsMessageSender.sendJsonMessage(sqsMessage);
+		sqsMessageSender.sendJsonMessage(sqsMessage); // 실제 SQS 메시지 전송 메소드
 	}
+
+	// 레디스락없이 구현
+	// @Transactional
+	// public ResPurchaseDto testPurchaseTimeDealByRedis(Long timeDealId, Long userId, int quantity) {
+	// 	// 시작 시간 측정
+	// 	long startTime = System.nanoTime();
+	//
+	// 	// 유저 확인
+	// 	long userLookupStartTime = System.nanoTime();
+	// 	//User user = userService.findById(userId);  // 실제 유저 조회 로직
+	// 	long userLookupEndTime = System.nanoTime();
+	// 	log.info("User lookup time: " + (userLookupEndTime - userLookupStartTime) + " ns");
+	//
+	// 	// Redis에서 재고 수량 조회
+	// 	String stockKey = "time_deal:stock:" + timeDealId;
+	// 	String stockQuantityStr = redisTemplate.opsForValue().get(stockKey);
+	//
+	// 	// 재고 수량 체크
+	// 	long redisQueryStartTime = System.nanoTime();
+	// 	int currentStockQuantity = (stockQuantityStr != null) ? Integer.parseInt(stockQuantityStr) : 0;
+	// 	long redisQueryEndTime = System.nanoTime();
+	// 	log.info("Redis query time: " + (redisQueryEndTime - redisQueryStartTime) + " ns");
+	//
+	// 	// 재고가 충분한 경우에만 구매 처리
+	// 	if (currentStockQuantity >= quantity) {
+	// 		// SQS 메시지 전송은 비동기 처리로 바로 큐에 전송
+	// 		long sqsStartTime = System.nanoTime();
+	// 		sendMessageToSQS(timeDealId, userId, quantity);  // 비동기 처리로 변경
+	// 		long sqsEndTime = System.nanoTime();
+	// 		log.info("SQS message send initiation time: " + (sqsEndTime - sqsStartTime) + " ns");
+	//
+	// 		// 재고 감소 처리 (락 없이 처리)
+	// 		long stockUpdateStartTime = System.nanoTime();
+	// 		redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity - quantity)); // 재고 감소
+	// 		long stockUpdateEndTime = System.nanoTime();
+	// 		log.info("Stock update time (without lock): " + (stockUpdateEndTime - stockUpdateStartTime) + " ns");
+	//
+	// 		// 응답 반환
+	// 		return new ResPurchaseDto(userId, quantity, LocalDateTime.now(), "PURCHASED");
+	// 	} else {
+	// 		// 재고가 부족한 경우
+	// 		throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + currentStockQuantity + "개");
+	// 	}
+	// }
+
 
 }
