@@ -386,9 +386,15 @@ public class TimeDealService {
 		}
 		timeDeal.setStockQuantity(stockQuantity);
 
+		// Redis 캐싱된 수량 업데이트
+		String stockKey = "time_deal:stock:" + dealId;
+		redisTemplate.opsForValue().set(stockKey, String.valueOf(stockQuantity));
+		log.info("Redis 캐시에 수량 업데이트 완료. key: {}, value: {}", stockKey, stockQuantity);
+
 		// 저장 및 반환
 		return timeDealRepository.save(timeDeal);
 	}
+
 
 
 
