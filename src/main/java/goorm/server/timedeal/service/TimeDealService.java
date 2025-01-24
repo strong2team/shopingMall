@@ -93,10 +93,7 @@ public class TimeDealService {
 		cacheTimeDealStockInRedis(timeDeal);
 
 		// 7. EventBridge Rule 생성
-		createEventBridgeRulesForTimeDeal(timeDeal);
-
-		// // 6. EventBridge Rule 생성
-		// createEventBridgeRulesForTimeDeal(timeDeal);
+		//createEventBridgeRulesForTimeDeal(timeDeal);
 
 		return timeDeal;
 	}
@@ -122,7 +119,7 @@ public class TimeDealService {
 		timeDeal.setDiscountPrice(timeDealRequest.discountPrice());
 		timeDeal.setDiscountPercentage(timeDealRequest.discountPercentage());
 		timeDeal.setUser(user);
-		timeDeal.setStatus(TimeDealStatus.SCHEDULED); // 초기 상태는 예약됨
+		timeDeal.setStatus(TimeDealStatus.ACTIVE); // 초기 상태는 예약됨
 		timeDeal.setStockQuantity(timeDealRequest.stockQuantity());
 		timeDeal = timeDealRepository.save(timeDeal);
 		return timeDeal;
@@ -520,8 +517,8 @@ public class TimeDealService {
 	// 		log.info("Lock release time: " + (lockReleaseEndTime - lockReleaseStartTime) + " ns");
 	// 	}
 	// }
-	//
-	//
+
+
 	// private void sendMessageToSQS(Long timeDealId, Long userId, int quantity) {
 	// 	SQSTimeDealDTO sqsMessage = new SQSTimeDealDTO(timeDealId, userId, quantity, "PURCHASED");
 	// 	sqsMessageSender.sendJsonMessage(sqsMessage);
