@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import goorm.server.timedeal.logging.AppLogger;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -294,20 +295,49 @@ public class TimeDealService {
 	 */
 	@Transactional
 	public String purchaseTimeDeal(Long timeDealId, int quantity) {
-		// 타임딜 조회 시 비관적 락 사용
-		TimeDeal timeDeal = timeDealRepository.findByIdWithLock(timeDealId)
-			.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+		// 메서드 호출 로그
+		AppLogger.logBusinessEvent("purchaseTimeDeal called",
+				"timeDealId", timeDealId, "quantity", quantity);
 
-		// 재고 확인
-		if (timeDeal.getStockQuantity() < quantity) {
-			throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + timeDeal.getStockQuantity() + "개");
+		try {
+			// 타임딜 조회 시 비관적 락 사용
+			TimeDeal timeDeal = timeDealRepository.findByIdWithLock(timeDealId)
+					.orElseThrow(() -> {
+						AppLogger.logError("TimeDeal not found",
+								new RuntimeException("타임딜 정보를 찾을 수 없습니다."),
+								"timeDealId", timeDealId);
+						return new RuntimeException("타임딜 정보를 찾을 수 없습니다.");
+					});
+
+			// 재고 확인
+			if (timeDeal.getStockQuantity() < quantity) {
+				AppLogger.logBusinessEvent("Insufficient stock",
+						"timeDealId", timeDealId,
+						"requestedQuantity", quantity,
+						"availableStock", timeDeal.getStockQuantity());
+				throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + timeDeal.getStockQuantity() + "개");
+			}
+
+			// 재고 감소
+			timeDeal.setStockQuantity(timeDeal.getStockQuantity() - quantity);
+			AppLogger.logBusinessEvent("Stock updated",
+					"timeDealId", timeDealId,
+					"remainingStock", timeDeal.getStockQuantity());
+
+			// 구매 완료 메시지 반환
+			String resultMessage = "구매가 완료되었습니다. 남은 재고: " + timeDeal.getStockQuantity() + "개";
+			AppLogger.logBusinessEvent("Purchase completed",
+					"timeDealId", timeDealId,
+					"quantity", quantity,
+					"remainingStock", timeDeal.getStockQuantity());
+			return resultMessage;
+
+		} catch (Exception e) {
+			// 에러 로그
+			AppLogger.logError("Error during purchaseTimeDeal", e,
+					"timeDealId", timeDealId, "quantity", quantity);
+			throw e; // 예외 다시 던지기
 		}
-
-		// 재고 감소
-		timeDeal.setStockQuantity(timeDeal.getStockQuantity() - quantity);
-
-		// 구매 완료 메시지 반환
-		return "구매가 완료되었습니다. 남은 재고: " + timeDeal.getStockQuantity() + "개";
 	}
 
 	@Transactional
@@ -335,25 +365,56 @@ public class TimeDealService {
 	 */
 	@Transactional
 	public ResPurchaseDto testPurchaseTimeDeal(Long timeDealId, Long userId, int quantity) {
-		// 유저 존재 여부 확인
-		User user = userService.findById(userId);
+		// 메서드 호출 로그
+		AppLogger.logBusinessEvent("testPurchaseTimeDeal called",
+				"timeDealId", timeDealId, "userId", userId, "quantity", quantity);
 
+		try {
+			// 유저 존재 여부 확인
+			User user = userService.findById(userId);
+			AppLogger.logBusinessEvent("User found", "userId", userId);
 
-		// 타임딜 조회 시 비관적 락 사용
-		TimeDeal timeDeal = timeDealRepository.findByIdWithLock(timeDealId)
-			.orElseThrow(() -> new RuntimeException("타임딜 정보를 찾을 수 없습니다."));
+			// 타임딜 조회 시 비관적 락 사용
+			TimeDeal timeDeal = timeDealRepository.findByIdWithLock(timeDealId)
+					.orElseThrow(() -> {
+						AppLogger.logError("TimeDeal not found",
+								new RuntimeException("타임딜 정보를 찾을 수 없습니다."),
+								"timeDealId", timeDealId);
+						return new RuntimeException("타임딜 정보를 찾을 수 없습니다.");
+					});
+			AppLogger.logBusinessEvent("TimeDeal found", "timeDealId", timeDealId, "currentStock", timeDeal.getStockQuantity());
 
-		// 재고 확인
-		if (timeDeal.getStockQuantity() < quantity) {
-			throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + timeDeal.getStockQuantity() + "개");
+			// 재고 확인
+			if (timeDeal.getStockQuantity() < quantity) {
+				AppLogger.logBusinessEvent("Insufficient stock",
+						"timeDealId", timeDealId,
+						"requestedQuantity", quantity,
+						"availableStock", timeDeal.getStockQuantity());
+				throw new IllegalStateException("재고가 부족합니다. 현재 재고: " + timeDeal.getStockQuantity() + "개");
+			}
+
+			// 재고 감소
+			timeDeal.setStockQuantity(timeDeal.getStockQuantity() - quantity);
+			timeDealRepository.save(timeDeal);
+			AppLogger.logBusinessEvent("Stock updated",
+					"timeDealId", timeDealId,
+					"remainingStock", timeDeal.getStockQuantity());
+
+			// 구매 기록 생성 및 저장
+			ResPurchaseDto purchaseRecord = purchaseService.createPurchaseRecord(timeDeal, user, quantity);
+			AppLogger.logBusinessEvent("Purchase record created",
+					"userId", userId,
+					"timeDealId", timeDealId,
+					"quantity", quantity);
+
+			return purchaseRecord;
+
+		} catch (Exception e) {
+			// 예외 로그 기록
+			AppLogger.logError("Error in testPurchaseTimeDeal", e,
+					"timeDealId", timeDealId, "userId", userId, "quantity", quantity);
+			throw e;
 		}
-
-		// 재고 감소
-		timeDeal.setStockQuantity(timeDeal.getStockQuantity() - quantity);
-		timeDealRepository.save(timeDeal);
-
-		// 구매 기록 생성 및 저장
-		return purchaseService.createPurchaseRecord(timeDeal, user, quantity);
 	}
 
 	/**
@@ -385,7 +446,6 @@ public class TimeDealService {
 			throw new IllegalArgumentException("수량은 0 이상이어야 합니다.");
 		}
 		timeDeal.setStockQuantity(stockQuantity);
-
 		// Redis 캐싱된 수량 업데이트
 		String stockKey = "time_deal:stock:" + dealId;
 		redisTemplate.opsForValue().set(stockKey, String.valueOf(stockQuantity));
@@ -539,14 +599,16 @@ public class TimeDealService {
 		long userLookupStartTime = System.nanoTime();
 		//User user = userService.findById(userId);  // 실제 유저 조회 로직
 		long userLookupEndTime = System.nanoTime();
-		log.info("User lookup time: " + (userLookupEndTime - userLookupStartTime) + " ns");
+		AppLogger.logPerformance("User Lookup", userLookupEndTime - userLookupStartTime,
+				"timeDealId", timeDealId, "userId", userId);
 
 		// Redis 락을 통한 동시성 제어
 		long lockStartTime = System.nanoTime();
 		RLock lock = redissonClient.getLock("deal-lock:" + timeDealId); // 고유한 락 키 설정
 		lock.lock(); // 락을 얻음
 		long lockEndTime = System.nanoTime();
-		log.info("Lock acquisition time: " + (lockEndTime - lockStartTime) + " ns");
+		AppLogger.logPerformance("Lock Acquisition", lockEndTime - lockStartTime,
+				"timeDealId", timeDealId);
 
 		try {
 			// Redis에서 재고 수량 조회
@@ -557,7 +619,9 @@ public class TimeDealService {
 			long redisQueryStartTime = System.nanoTime();
 			int currentStockQuantity = (stockQuantityStr != null) ? Integer.parseInt(stockQuantityStr) : 0;
 			long redisQueryEndTime = System.nanoTime();
-			log.info("Redis query time: " + (redisQueryEndTime - redisQueryStartTime) + " ns");
+			AppLogger.logPerformance("Redis Query", redisQueryEndTime - redisQueryStartTime,
+					"stockKey", stockKey, "currentStock", currentStockQuantity);
+
 
 			// 재고가 충분한 경우에만 구매 처리
 			if (currentStockQuantity >= quantity) {
@@ -565,7 +629,8 @@ public class TimeDealService {
 				long stockUpdateStartTime = System.nanoTime();
 				redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStockQuantity - quantity)); // 재고 감소
 				long stockUpdateEndTime = System.nanoTime();
-				log.info("Stock update time: " + (stockUpdateEndTime - stockUpdateStartTime) + " ns");
+				AppLogger.logPerformance("Stock Update", stockUpdateEndTime - stockUpdateStartTime,
+						"stockKey", stockKey, "newStock", currentStockQuantity - quantity);
 
 				// SQS 메시지 전송은 비동기 처리
 				// long sqsStartTime = System.nanoTime();
@@ -587,13 +652,15 @@ public class TimeDealService {
 			long lockReleaseStartTime = System.nanoTime();
 			lock.unlock();  // 락을 해제
 			long lockReleaseEndTime = System.nanoTime();
-			log.info("Lock release time: " + (lockReleaseEndTime - lockReleaseStartTime) + " ns");
+			AppLogger.logPerformance("Lock Release", lockReleaseEndTime - lockReleaseStartTime,
+					"timeDealId", timeDealId);
 
 			if(flag){
 				long sqsStartTime = System.nanoTime();
 				sendMessageToSQS(timeDealId, userId, quantity);  // 비동기 처리로 변경
 				long sqsEndTime = System.nanoTime();
-				log.info("SQS message send initiation time: " + (sqsEndTime - sqsStartTime) + " ns");
+				AppLogger.logPerformance("SQS Message Send", sqsEndTime - sqsStartTime,
+						"timeDealId", timeDealId, "userId", userId, "quantity", quantity);
 			}
 		}
 	}

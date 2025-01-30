@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import goorm.server.timedeal.logging.AppLogger;
 import goorm.server.timedeal.dto.SQSTimeDealDTO;
 import io.awspring.cloud.sqs.operations.SendResult;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
@@ -33,15 +33,39 @@ public class SqsMessageSender {
 	}
 
 	public SendResult<String> sendMessage(String messageBody) {
+		AppLogger.logBusinessEvent("SQS Message Sending Started",
+				"QueueName", queueName,
+				"MessageBody", messageBody);
 
-		// SQS 전송할 메시지
-		Message<String> message = MessageBuilder.withPayload(messageBody).build();
+		try{
+			// SQS 전송할 메시지
+			Message<String> message = MessageBuilder.withPayload(messageBody).build();
 
-		// 메시지를 큐에 전송하고, 전송 결과를 반환
-		return queueMessagingTemplate.send(queueName, message);
+			SendResult<String> result = queueMessagingTemplate.send(queueName, message);
+
+			// 성공 로그 기록
+			AppLogger.logBusinessEvent("SQS Message Sent Successfully",
+					"QueueName", queueName,
+					"MessageID", result.messageId(),
+					"Endpoint", result.endpoint());
+			return result;
+
+			// 메시지를 큐에 전송하고, 전송 결과를 반환
+			//return queueMessagingTemplate.send(queueName, message);
+	}catch(Exception e){
+			// 에러 로그 기록
+			AppLogger.logError("SQS Message Sending Failed",
+					e,
+					"QueueName", queueName,
+					"MessageBody", messageBody);
+			throw e;
+		}
 	}
 
 	public void sendJsonMessage(SQSTimeDealDTO payload) {
+		AppLogger.logBusinessEvent("SQS JSON Message Sending Started",
+				"QueueName", queueName,
+				"Payload", payload);
 		try {
 			// JSON 형식으로 변환
 			String jsonPayload = objectMapper.writeValueAsString(payload);
@@ -54,8 +78,18 @@ public class SqsMessageSender {
 
 			// 메시지 전송
 			queueMessagingTemplate.send(queueName, message);
-			log.info("메시지가 성공적으로 전송되었습니다: " + jsonPayload);
+			//log.info("메시지가 성공적으로 전송되었습니다: " + jsonPayload);
+
+			// 성공 로그 기록
+			AppLogger.logBusinessEvent("SQS JSON Message Sent Successfully",
+					"QueueName", queueName,
+					"Payload", jsonPayload);
 		} catch (Exception e) {
+			// 에러 로그 기록
+			AppLogger.logError("SQS JSON Message Sending Failed",
+					e,
+					"QueueName", queueName,
+					"Payload", payload);
 			System.err.println("메시지 전송 중 오류 발생: " + e.getMessage());
 			e.printStackTrace();
 		}
