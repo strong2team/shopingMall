@@ -3,9 +3,6 @@
     <!-- 타임스탬프 설정 -->
     <timestamp key="timestamp" datePattern="yyyy-MM-dd HH-mm-ssSSS"/>
 
-    <!-- Spring 환경 변수 참조 -->
-    <springProperty scope="context" name="AWS_ACCESS_KEY" source="cloud.aws.credentials.access-key"/>
-    <springProperty scope="context" name="AWS_SECRET_KEY" source="cloud.aws.credentials.secret-key"/>
 
     <!-- STDOUT 콘솔 Appender -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -14,39 +11,23 @@
         </encoder>
     </appender>
 
-    <!-- AWS CloudWatch Appender -->
-    <appender name="aws_cloud_watch_log" class="ca.pjer.logback.AwsLogsAppender">
-        <layout>
-            <pattern>[%thread] [%date] [%level] [%file:%line] - %msg%n</pattern>
-        </layout>
-        <logGroupName>timedeal-logs</logGroupName> <!-- 로그 그룹 이름 -->
-        <logStreamUuidPrefix>timedeal-stream</logStreamUuidPrefix> <!-- 로그 스트림 이름 접두어 -->
-        <logRegion>ap-northeast-2</logRegion> <!-- AWS 리전 (서울 리전) -->
-        <maxBatchLogEvents>50</maxBatchLogEvents>
-        <maxFlushTimeMillis>30000</maxFlushTimeMillis>
-        <maxBlockTimeMillis>5000</maxBlockTimeMillis>
-        <retentionTimeDays>30</retentionTimeDays> <!-- 로그 보존 기간 (30일) -->
-
-        <accessKeyId>${AWS_ACCESS_KEY}</accessKeyId> <!-- Spring 설정 값 참조 -->
-        <secretAccessKey>${AWS_SECRET_KEY}</secretAccessKey>
-    </appender>
-
-    <!-- 비동기 AWS Appender -->
-    <appender name="ASYNC_AWS" class="ch.qos.logback.classic.AsyncAppender">
-        <queueSize>500</queueSize> <!-- 로그 큐 크기 -->
-        <discardingThreshold>0</discardingThreshold> <!-- 큐 가득 찼을 때 버릴 로그 수준 -->
-        <appender-ref ref="aws_cloud_watch_log"/> <!-- 기존 AWS Appender 참조 -->
+    <!-- Logstash Appender -->
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>13.125.139.121:5001</destination> <!-- Logstash가 수신하는 IP와 포트 -->
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app_name":"timedealapp"}</customFields>
+        </encoder>
     </appender>
 
     <!-- HTTP 요청/응답 로거 -->
-    <logger name="http-log" level="INFO" additivity="false">
+    <logger name="app-log" level="INFO" additivity="false">
         <appender-ref ref="STDOUT"/> <!-- 콘솔 출력 -->
-        <appender-ref ref="ASYNC_AWS"/> <!-- AWS CloudWatch 출력 -->
+        <appender-ref ref="LOGSTASH"/> <!-- Logstash로 출력 -->
     </logger>
 
     <!-- 루트 로거 설정 -->
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="ASYNC_AWS"/>
+        <appender-ref ref="LOGSTASH"/>
     </root>
 </configuration>
