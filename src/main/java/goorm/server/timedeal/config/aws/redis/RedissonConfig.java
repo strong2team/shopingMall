@@ -21,6 +21,7 @@ public class RedissonConfig {
 		return Redisson.create(config);
 	}
 
+
 	@Bean
 	@Profile("prod")
 	public RedissonClient redissonClientProd(@Value("${spring.data.redis.host}") String redisHost,
