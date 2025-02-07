@@ -27,7 +27,7 @@ public class RedissonConfig {
 	public RedissonClient redissonClientProd(@Value("${spring.data.redis.host}") String redisHost,
 		@Value("${spring.data.redis.port}") int redisPort) {
 		Config config = new Config();
-		String redisAddress = String.format("rediss://%s:%d", redisHost, redisPort);
+		String redisAddress = String.format("redis://%s:%d", redisHost, redisPort);
 		config.useSingleServer().setAddress(redisAddress);
 		return Redisson.create(config);
 	}
