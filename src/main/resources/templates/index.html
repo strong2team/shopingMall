@@ -156,6 +156,154 @@
             text-decoration: underline; /* 호버 시 원하는 스타일 추가 가능 */
         }
 
+
+        /*추가된부분==============================================*/
+        /* 상품 컨테이너 */
+        .product-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 카드 크기 고정 */
+            gap: 20px; /* 카드 간격 */
+            padding: 20px; /* 여백 */
+        }
+
+        /* 카드 공통 스타일 */
+        .product, .coming-soon {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        /* 호버 효과 */
+        .product:hover, .coming-soon:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 이미지 스타일 고정 */
+        .product img, .coming-soon img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        /* 할인 태그 */
+        .discount-tag {
+            background-color: #e74c3c;
+            color: white;
+            font-size: 1.4em;
+            padding: 5px 10px;
+            border-radius: 15px;
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 2;
+        }
+
+        /* Coming Soon 스타일 */
+        .coming-soon .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            z-index: 1;
+        }
+
+        .coming-soon .overlay-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 2;
+        }
+
+        /* 가격 텍스트 */
+        .price-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .discounted-price {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #111;
+        }
+
+        /* 타이머 */
+        .time-remaining {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .timer {
+            color: #e67e22;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+
+        /* 스타일 */
+        /* 커밍순 카드 디자인 */
+        /* 커밍순 카드 오버레이 스타일 */
+        .coming-soon .overlay {
+            display: block; /* 항상 표시 */
+            position: absolute; /* 부모 요소 기준 위치 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* 반투명 검정 */
+            border-radius: 12px;
+            z-index: 2; /* 다른 요소보다 위에 표시 */
+            opacity: 1; /* 기본적으로 불투명 */
+        }
+
+        .coming-soon .overlay-content {
+            display: block; /* 항상 표시 */
+            position: absolute; /* 부모 요소 기준 위치 */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 3; /* 오버레이 위에 표시 */
+        }
+        /* 숨겨진 요소 기본 설정 */
+        .hide {
+            display: none !important;
+        }
+        /* 커밍순 상태에서는 호버 효과도 제거 */
+        a.coming-soon-disabled:hover {
+            text-decoration: none; /* 호버 시에도 밑줄 제거 */
+        }
+        .coming-soon-start-time {
+            font-size: 1.0rem;
+            color: #999999;
+            margin-top: 50px;
+            text-align: center;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
@@ -171,10 +319,13 @@
         <!-- Active Time Deals -->
         <div class="product"
              th:each="deal : ${activeDeals}"
+             th:data-start-time="${deal.startTime}"
              th:data-end-time="${deal.endTime}"
              th:data-product-id="${deal.productId}">
             <a th:href="'/v1/products/' + ${deal.productId}">
                 <img th:src="${deal.ProductImages}" alt="Product Image">
+                <div class="overlay"></div>
+                <div class="overlay-content">Coming Soon</div>
                 <div class="discount-tag" th:text="'-' + ${deal.discountRate} + '%'">Discount</div>
                 <h3 th:utext="${deal.productName}">Product Name</h3>
             </a>
@@ -191,28 +342,15 @@
             <div class="stock-quantity">
                 남은 재고: <span th:text="${deal.stockQuantity}">Stock</span>개
             </div>
+            <div class="coming-soon-start-time hide">
+                시작시간: <span class="start-time"></span>
+            </div>
         </div>
 
 
 
         <!-- Coming Soon Deals -->
-        <div class="coming-soon" th:each="deal : ${scheduledDeals}" th:data-product-id="${deal.productId}" th:data-end-time="${deal.endTime}">
-            <img th:src="${deal.ProductImages}" alt="Coming Soon Image">
-            <div class="overlay"></div>
-            <div class="overlay-content">Coming Soon</div>
-            <h3 th:utext="${deal.productName}">Product Name</h3>
-            <div class="price-container">
-                <span class="original-price" th:text="${deal.originalPrice}">Original Price</span>
-                <span class="discounted-price" th:text="${deal.discountPrice}">Discounted Price</span> 원
-            </div>
-            <div class="date-range">
-                <span th:text="${deal.startTime}">Start Date</span> ~
-                <span th:text="${deal.endTime}">End Date</span>
-            </div>
-            <div class="days-remaining">
-                남은 날짜: <span class="days-left">계산 중...</span>일
-            </div>
-        </div>
+
     </div>
 </main>
 
@@ -271,6 +409,10 @@
                 </div>
                 <div class="stock-quantity">
                     남은 재고: <span>${dealData.stockQuantity}</span>개
+                </div>
+                <!-- 커밍순 시작 시간 표시를 위한 컨테이너 -->
+                <div class="coming-soon-start-time hide">
+                    시작시간: <span class="start-time"></span>
                 </div>
             `;
 
@@ -430,6 +572,87 @@
                 }
             }
         });
+</script>
+
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        function updateCardStates() {
+            const now = new Date();
+            const cards = document.querySelectorAll('.product, .coming-soon');
+
+            cards.forEach(card => {
+                const startTimeAttr = card.getAttribute('data-start-time');
+                const endTimeAttr = card.getAttribute('data-end-time');
+                const startTime = new Date(startTimeAttr);
+                const endTime = new Date(endTimeAttr);
+
+                if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+                    console.error('Invalid time attributes:', { startTimeAttr, endTimeAttr });
+                    return;
+                }
+
+                const link = card.querySelector('a');
+                const startTimeElement = card.querySelector('.coming-soon-start-time');
+                const startTimeSpan = card.querySelector('.coming-soon-start-time .start-time');
+
+                if (now < startTime) {
+                    // 커밍순 상태
+                    card.classList.add('coming-soon');
+                    card.classList.remove('product');
+
+                    if (link) {
+                        link.removeAttribute('href'); // 링크 제거
+                        link.classList.add('coming-soon-disabled'); // 비활성화 클래스 추가
+                    }
+
+                    if (startTimeElement && startTimeSpan) {
+                        startTimeElement.classList.remove('hide'); // 시작 시간 표시
+                        startTimeSpan.textContent = startTime.toLocaleString(); // 시작 시간 포맷
+                    }
+
+                    // 숨길 요소
+                    const discountTag = card.querySelector('.discount-tag');
+                    const timeRemaining = card.querySelector('.time-remaining');
+                    const stockQuantity = card.querySelector('.stock-quantity');
+                    if (discountTag) discountTag.classList.add('hide');
+                    if (timeRemaining) timeRemaining.classList.add('hide');
+                    if (stockQuantity) stockQuantity.classList.add('hide');
+                } else if (now >= startTime && now <= endTime) {
+                    // 활성 상태
+                    card.classList.add('product');
+                    card.classList.remove('coming-soon');
+
+                    if (link) {
+                        link.setAttribute('href', `/v1/products/${card.getAttribute('data-product-id')}`);
+                        link.classList.remove('coming-soon-disabled'); // 비활성화 클래스 제거
+                    }
+
+                    if (startTimeElement) {
+                        startTimeElement.classList.add('hide'); // 시작 시간 숨기기
+                    }
+
+                    // 표시할 요소
+                    const discountTag = card.querySelector('.discount-tag');
+                    const timeRemaining = card.querySelector('.time-remaining');
+                    const stockQuantity = card.querySelector('.stock-quantity');
+                    if (discountTag) discountTag.classList.remove('hide');
+                    if (timeRemaining) timeRemaining.classList.remove('hide');
+                    if (stockQuantity) stockQuantity.classList.remove('hide');
+                } else {
+                    // 만료 상태 - 카드 제거
+                    card.remove();
+                }
+            });
+        }
+
+        setInterval(updateCardStates, 1000); // 상태를 주기적으로 갱신
+        updateCardStates(); // 초기 실행
+    });
+
+
 </script>
 
 </body>
