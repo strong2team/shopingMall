@@ -33,6 +33,7 @@ public class SqsMessageSender {
 	}
 
 	public SendResult<String> sendMessage(String messageBody) {
+
 		AppLogger.logBusinessEvent("SQS Message Sending Started",
 				"QueueName", queueName,
 				"MessageBody", messageBody);
