@@ -16,7 +16,7 @@ public class RedisConfig {
 
 	@Bean
 	public RedisMessageListenerContainer container(RedisConnectionFactory connectionFactory,
-		MessageListenerAdapter listenerAdapter) {
+												   MessageListenerAdapter listenerAdapter) {
 		RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
 		container.addMessageListener(listenerAdapter, new org.springframework.data.redis.listener.ChannelTopic("time-deal-channel"));
