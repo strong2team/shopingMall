@@ -589,7 +589,7 @@ public class TimeDealService {
 
 
 
-	@Transactional
+	//@Transactional
 	public ResPurchaseDto testPurchaseTimeDealByRedis(Long timeDealId, Long userId, int quantity) {
 		boolean flag=false;
 		// 시작 시간 측정
