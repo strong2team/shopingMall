@@ -25,6 +25,8 @@ import goorm.server.timedeal.service.TimeDealService;
 import goorm.server.timedeal.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,7 +51,7 @@ public class TimeDealController {
 	public ResponseEntity<BaseResponse<TimeDeal>> createTimeDeal(@RequestBody ReqTimeDeal timeDealRequest) {
 
 		BaseResponse<TimeDeal> response;
-
+    		Logger logger = LoggerFactory.getLogger(getClass());
 		System.out.println("timeDealRequest = " + timeDealRequest.startTime());
 
 		try {
