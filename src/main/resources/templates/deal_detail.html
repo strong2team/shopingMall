@@ -246,6 +246,7 @@
                 try {
                     // API 호출
                     const response = await fetch(`/api/time-deals/${dealId}/purchases?quantity=${quantity}`, {
+                    // const response = await fetch(`/api/test/${dealId}/purchases?quantity=${quantity}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

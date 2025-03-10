@@ -1,9 +1,5 @@
 package goorm.server.timedeal.model;
 
-import org.hibernate.envers.AuditOverride;
-import org.hibernate.envers.AuditTable;
-import org.hibernate.envers.Audited;
-
 import goorm.server.timedeal.model.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

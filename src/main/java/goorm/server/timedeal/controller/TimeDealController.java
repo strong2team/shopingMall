@@ -25,6 +25,8 @@ import goorm.server.timedeal.service.TimeDealService;
 import goorm.server.timedeal.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,7 +51,7 @@ public class TimeDealController {
 	public ResponseEntity<BaseResponse<TimeDeal>> createTimeDeal(@RequestBody ReqTimeDeal timeDealRequest) {
 
 		BaseResponse<TimeDeal> response;
-
+    		Logger logger = LoggerFactory.getLogger(getClass());
 		System.out.println("timeDealRequest = " + timeDealRequest.startTime());
 
 		try {
@@ -68,6 +70,7 @@ public class TimeDealController {
 				return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);  // 403 Forbidden
 			}
 		} catch (Exception e) { // 예외 발생 시 실패 응답
+			logger.error("TimeDeal creation failed: {}", e.getMessage(), e);
 			response = new BaseResponse<>(BaseResponseStatus.ERROR);
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -229,6 +232,4 @@ public class TimeDealController {
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-
-
 }

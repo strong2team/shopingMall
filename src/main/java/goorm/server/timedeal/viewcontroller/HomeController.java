@@ -52,25 +52,25 @@ public class HomeController {
 			.collect(Collectors.toList());
 
 		// SCHEDULED 상태만 필터링 및 DTO 로 변환
-		List<ResIndexPageTimeDealDto> scheduledDeals = timeDeals.stream()
-			.filter(deal -> deal.getStatus() == TimeDealStatus.SCHEDULED)
-			.map(deal -> new ResIndexPageTimeDealDto(
-				deal.getProduct().getProductId(),
-				deal.getProduct().getProductImages().get(0).getImageUrl(),
-				deal.getProduct().getTitle(),
-				deal.getProduct().getPrice(),
-				deal.getDiscountPrice(),
-				deal.getDiscountPercentage() != null ? String.valueOf(deal.getDiscountPercentage()) : "",
-				deal.getStartTime(),
-				deal.getEndTime(),
-				deal.getStatus().name(),
-				deal.getStockQuantity()
-			))
-			.collect(Collectors.toList());
+		// List<ResIndexPageTimeDealDto> scheduledDeals = timeDeals.stream()
+		// 	.filter(deal -> deal.getStatus() == TimeDealStatus.SCHEDULED)
+		// 	.map(deal -> new ResIndexPageTimeDealDto(
+		// 		deal.getProduct().getProductId(),
+		// 		deal.getProduct().getProductImages().get(0).getImageUrl(),
+		// 		deal.getProduct().getTitle(),
+		// 		deal.getProduct().getPrice(),
+		// 		deal.getDiscountPrice(),
+		// 		deal.getDiscountPercentage() != null ? String.valueOf(deal.getDiscountPercentage()) : "",
+		// 		deal.getStartTime(),
+		// 		deal.getEndTime(),
+		// 		deal.getStatus().name(),
+		// 		deal.getStockQuantity()
+		// 	))
+		// 	.collect(Collectors.toList());
 
 
 		model.addAttribute("activeDeals", activeDeals);
-		model.addAttribute("scheduledDeals", scheduledDeals);
+		// model.addAttribute("scheduledDeals", scheduledDeals);
 
 		return "index";
 	}

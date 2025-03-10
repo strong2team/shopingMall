@@ -92,34 +92,34 @@ footer {
     padding: 10px 0;
     font-size: 0.8rem;
 }
-/* Coming Soon 카드 스타일 */
-.coming-soon {
-    position: relative;
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px;
-}
+/*!* Coming Soon 카드 스타일 *!*/
+/*.coming-soon {*/
+/*    position: relative;*/
+/*    background-color: white;*/
+/*    border: 1px solid #ddd;*/
+/*    border-radius: 8px;*/
+/*    padding: 15px;*/
+/*}*/
 
-.coming-soon .overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* 검은색 투명 배경 */
-    border-radius: 8px;
-    z-index: 1;
-}
+/*.coming-soon .overlay {*/
+/*    position: absolute;*/
+/*    top: 0;*/
+/*    left: 0;*/
+/*    width: 100%;*/
+/*    height: 100%;*/
+/*    background-color: rgba(0, 0, 0, 0.5); !* 검은색 투명 배경 *!*/
+/*    border-radius: 8px;*/
+/*    z-index: 1;*/
+/*}*/
 
-.coming-soon .overlay-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: rgba(0, 0, 0, 0.4); /* 검은색 투명도 40% */
-    font-size: 2rem;
-    font-weight: bold;
-    text-align: center;
-    z-index: 2; /* 투명 배경 위에 표시 */
-}
+/*.coming-soon .overlay-content {*/
+/*    position: absolute;*/
+/*    top: 50%;*/
+/*    left: 50%;*/
+/*    transform: translate(-50%, -50%);*/
+/*    color: rgba(0, 0, 0, 0.4); !* 검은색 투명도 40% *!*/
+/*    font-size: 2rem;*/
+/*    font-weight: bold;*/
+/*    text-align: center;*/
+/*    z-index: 2; !* 투명 배경 위에 표시 *!*/
+/*}*/

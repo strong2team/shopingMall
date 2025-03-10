@@ -20,6 +20,6 @@ public class TestHealthController {
 
 	@GetMapping("/status")
 	public String statusCheck() {
-		return "TimeDeal Project is up and running 1 / 9!";
+		return "TimeDeal Project is up and running 1 / 15일!";
 	}
 }
