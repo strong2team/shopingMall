@@ -63,7 +63,7 @@ jobs:
           sed -i "s|\(image:.*\):.*|\1:${IMAGE_TAG}|g" timedeal-app-test-deployment.yaml  # 정확한 파일명으로 수정
           git config user.name khm0930
           git config user.email asd000930@naver.com
-          git add deployment.yaml
+          git add timedeal-app-test-deployment.yaml  # 파일명도 timedeal-app-test-deployment.yaml로 수정
           git commit -m "chore: update image tag to ${IMAGE_TAG}"
           git push origin main
 
