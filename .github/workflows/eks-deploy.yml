@@ -1,0 +1,63 @@
+name: Deploy to EKS with ArgoCD
+
+on:
+  push:
+    branches: [ develop ]
+
+permissions:
+  contents: write
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: 820242919524.dkr.ecr.ap-northeast-2.amazonaws.com/shop
+  K8S_MANIFEST_REPO: https://github.com/strong2team/shoppingMall-eks.git
+  K8S_MANIFEST_REPO_NAME: shoppingMall-eks
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  deploy:
+    name: Build and Push Docker Image, Update Manifest Repo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      # AWS credentials 설정
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      # ECR에 로그인
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # 도커 이미지 빌드 및 ECR에 푸시
+      - name: Build, Tag and Push Docker Image
+        run: |
+          docker build -t $ECR_REGISTRY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY:$IMAGE_TAG
+
+      # 매니페스트 저장소 체크아웃
+      - name: Checkout Kubernetes manifest repo
+        uses: actions/checkout@v4
+        with:
+          repository: strong2team/shoppingMall-eks
+          token: ${{ secrets.GIT_TOKEN }}
+          path: ${{ env.K8S_MANIFEST_REPO_NAME }}
+
+      # 배포 yaml 파일의 이미지 태그 업데이트
+      - name: Update Kubernetes manifests with new image
+        run: |
+          cd $K8S_MANIFEST_REPO_NAME
+          sed -i "s|\(image:.*\):.*|\1:${IMAGE_TAG}|g" deployment.yaml
+          git config user.name khm0930
+          git config user.email asd000930@naver.com
+          git add deployment.yaml
+          git commit -m "chore: update image tag to ${IMAGE_TAG}"
+          git push origin main
+
+
