@@ -5,7 +5,7 @@ spring:
   application:
     name: timedeal
   profiles:
-    default: prod
+    default: dev
   thymeleaf:
     cache: false
     prefix: classpath:/templates/
